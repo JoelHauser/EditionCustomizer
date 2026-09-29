@@ -9,7 +9,9 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>ChangeIcons.Editor</RootNamespace>
     <AssemblyName>ChangeIcons.Editor</AssemblyName>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
+    <!-- Drawn by scripts/make_app_icon.py -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
 
     <!--
       One exe, so it can sit in BepInEx\plugins\ChangeIcons without BepInEx trying to load a DLL:
@@ -27,6 +29,8 @@
     <PackageReference Include="AssetsTools.NET.Texture" Version="3.0.2" />
     <!-- Unity class layouts for AssetsTools; the game's files don't carry their own -->
     <EmbeddedResource Include="Assets\classdata.tpk" LogicalName="classdata.tpk" />
+    <!-- The window icon (title bar, taskbar) -->
+    <Resource Include="Assets\app.ico" />
     <!-- The bot look generator, shared with the plugin so the preview matches the game -->
     <Compile Include="..\Shared\BotLooks.cs" Link="Shared\BotLooks.cs" />
   </ItemGroup>

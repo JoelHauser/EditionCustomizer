@@ -61,6 +61,16 @@ public partial class MainWindow : Window
         BotsTab.Checked += (_, _) => ShowPage();
         ProfileTab.Checked += (_, _) => ShowPage();
         SaveButton.Click += (_, _) => Save();
+        // Just the folder's name: a full path can be long enough to run into the tabs
+        SptButton.Content = $"SPT: {new DirectoryInfo(sptPath).Name}";
+        SptButton.ToolTip = sptPath + Environment.NewLine + "Click to pick a different SPT folder";
+        SptButton.Click += (_, _) =>
+        {
+            if (App.PickSpt(this) is { } other && !string.Equals(Path.GetFullPath(other), Path.GetFullPath(_sptPath), StringComparison.OrdinalIgnoreCase))
+            {
+                ((App)Application.Current).SwitchTo(other);
+            }
+        };
 
         IconList.SelectionChanged += (_, _) => ShowCurrent();
         NewButton.Click += (_, _) => AddIcon(copyOf: null);
