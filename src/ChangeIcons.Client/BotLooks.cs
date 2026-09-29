@@ -23,12 +23,9 @@ public static class BotLooks
     }
 
     private static BotRules _rules;
-    private static Dictionary<string, string> _names = new(StringComparer.OrdinalIgnoreCase);
 
     public static void Configure(BotConfig config)
     {
-        _names = new(StringComparer.OrdinalIgnoreCase);
-
         // No "bots" section (a fresh install, or icons.json never saved): on, with the defaults
         if (config == null)
         {
@@ -57,8 +54,7 @@ public static class BotLooks
             AnimateChance = Mathf.Clamp(config.AnimateChance, 0, 100),
             MaxSpeed = config.MaxSpeed,
         };
-        _names = new Dictionary<string, string>(config.Names ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-        Plugin.Log.LogInfo($"PMC bot looks on: {_rules.Share}% of PMCs, {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets, {_names.Count} named bots");
+        Plugin.Log.LogInfo($"PMC bot looks on: {_rules.Share}% of PMCs, {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
     }
 
     // icons/library/*.png as the plugin refers to them
@@ -82,11 +78,6 @@ public static class BotLooks
 
         try
         {
-            if (_names.TryGetValue(name.Trim(), out var key))
-            {
-                return Named(key);
-            }
-
             var look = BotLookGenerator.For(name, _rules);
             if (look == null)
             {
@@ -105,25 +96,6 @@ public static class BotLooks
             Plugin.Log.LogWarning($"No look for bot \"{name}\": {e.Message}");
             return null;
         }
-    }
-
-    // A named bot wears one of your icons: its picture and its nickname colors
-    private static Look Named(string key)
-    {
-        var category = int.TryParse(key, out var number)
-            ? (EMemberCategory)number
-            : Enum.TryParse(key, true, out EMemberCategory parsed) ? parsed : EMemberCategory.Default;
-        var row = EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(category);
-        if (row == null)
-        {
-            return null;
-        }
-
-        return new Look
-        {
-            Style = IconTable.StyleFor(row.Category) ?? NameStyle.Create(new[] { row.IconColor }, false, 0),
-            Icon = row.IconSprite,
-        };
     }
 
     private static Sprite IconFor(string entry)

@@ -51,7 +51,7 @@ A bot's look is worked out from its name (`src/Shared/BotLooks.cs`, compiled int
 and the editor), so the same name looks the same every raid and nothing is stored on bots or
 profiles. It shows on the death screen ("killed by": icon and colors) and in the kill list after a
 raid (colors). It is on out of the box (every library and member icon, every preset); the
-editor's BOTS page narrows it down or turns it off. Specific names can be given one of your icons. Because only the final name matters,
+editor's BOTS page narrows it down or turns it off. Because only the final name matters,
 it works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns-reloaded) and
 [Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews real
 names from whichever of them is installed.

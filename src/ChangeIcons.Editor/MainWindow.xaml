@@ -296,16 +296,6 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Style="{StaticResource Card}">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource CardTitle}" Text="BOTS WITH A FIXED LOOK" />
-                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,12"
-                                       Text="Give a particular bot name one of your icons: its picture and its name colors. The name has to match (capitals don't matter)." />
-                            <StackPanel x:Name="NamedPanel" />
-                            <Button x:Name="AddNamedButton" Content="+ ADD A NAME" HorizontalAlignment="Left" Margin="0,4,0,0" />
-                        </StackPanel>
-                    </Border>
-
                 </StackPanel>
             </ScrollViewer>
 

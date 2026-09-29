@@ -114,8 +114,4 @@ public class BotConfig
 
     [JsonProperty("maxSpeed")]
     public double MaxSpeed = 1.0;
-
-    /// <summary>Bot name -> one of your icons ("2048", "Unheard"): that bot always gets it.</summary>
-    [JsonProperty("names")]
-    public Dictionary<string, string> Names = new();
 }

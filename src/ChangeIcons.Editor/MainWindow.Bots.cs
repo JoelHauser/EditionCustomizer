@@ -21,16 +21,8 @@ public partial class MainWindow
     private readonly ObservableCollection<GalleryItem> _botIcons = [];
     private readonly ObservableCollection<BotSample> _samples = [];
     private readonly List<string> _sampleNames = [];
-    private readonly List<NamedRow> _namedRows = [];
     private readonly Random _shuffle = new();
     private bool _botsLoading;
-
-    private class NamedRow
-    {
-        public required TextBox Box;
-        public required Button Pick;
-        public required string Key;
-    }
 
     private void WireBots()
     {
@@ -66,11 +58,6 @@ public partial class MainWindow
         BotIconsAll.Click += (_, _) => BotIconGallery.SelectAll();
         BotIconsNone.Click += (_, _) => BotIconGallery.UnselectAll();
 
-        AddNamedButton.Click += (_, _) =>
-        {
-            AddNamedRow("", _items.FirstOrDefault(i => i.Icon.IsCustom)?.Icon.Key ?? "Unheard");
-            _namedRows[^1].Box.Focus();
-        };
         TryNameBox.TextChanged += (_, _) => RefreshKiller();
         ShuffleButton.Click += (_, _) => Shuffle();
 
@@ -147,13 +134,6 @@ public partial class MainWindow
             {
                 BotIconGallery.SelectedItems.Add(item);
             }
-
-            NamedPanel.Children.Clear();
-            _namedRows.Clear();
-            foreach (var (name, key) in _bots.Names)
-            {
-                AddNamedRow(name, key);
-            }
         }
         finally
         {
@@ -218,75 +198,6 @@ public partial class MainWindow
         NameSourceText.Text = _namePool.Names.Count > 0 ? $"{_namePool.Names.Count:N0} names from {_namePool.Source}" : "No PMC names found";
     }
 
-    // ---------------------------------------------------------------- Bots with a fixed look
-
-    private void AddNamedRow(string name, string key)
-    {
-        var box = new TextBox { Text = name, Width = 240, Tag = "Bot name", Margin = new Thickness(0, 0, 10, 0) };
-        var pick = new Button { Padding = new Thickness(10, 5, 10, 5), MinWidth = 200, HorizontalContentAlignment = HorizontalAlignment.Left };
-        var remove = new Button { Content = "✕", Style = (Style)FindResource("GhostBtn"), Margin = new Thickness(6, 0, 0, 0), ToolTip = "Remove" };
-        var row = new NamedRow { Box = box, Pick = pick, Key = key };
-
-        pick.Content = IconChoice(key);
-        pick.Click += (_, _) =>
-        {
-            var menu = new ContextMenu { PlacementTarget = pick, Placement = PlacementMode.Bottom };
-            foreach (var item in _items)
-            {
-                var entry = new MenuItem { Header = IconChoice(item.Icon.Key) };
-                var chosen = item.Icon.Key;
-                entry.Click += (_, _) =>
-                {
-                    row.Key = chosen;
-                    pick.Content = IconChoice(chosen);
-                    BotsEdit(ReadNames);
-                };
-                menu.Items.Add(entry);
-            }
-
-            menu.IsOpen = true;
-        };
-        box.TextChanged += (_, _) => BotsEdit(ReadNames);
-
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-        panel.Children.Add(box);
-        panel.Children.Add(pick);
-        panel.Children.Add(remove);
-        remove.Click += (_, _) =>
-        {
-            NamedPanel.Children.Remove(panel);
-            _namedRows.Remove(row);
-            BotsEdit(ReadNames);
-        };
-
-        NamedPanel.Children.Add(panel);
-        _namedRows.Add(row);
-    }
-
-    private FrameworkElement IconChoice(string key)
-    {
-        var icon = _items.FirstOrDefault(i => i.Icon.Key == key)?.Icon;
-        var panel = new StackPanel { Orientation = Orientation.Horizontal };
-        panel.Children.Add(new Image { Source = icon != null ? IconImage(icon) : null, Width = 18, Height = 18, Margin = new Thickness(0, 0, 8, 0) });
-        panel.Children.Add(new StyledName
-        {
-            Text = icon != null ? DisplayName(icon) : $"{key} (gone)",
-            Look = icon != null ? Look(icon) : NameLook.Solid(Colors.Gray),
-            FontSize = 14,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        return panel;
-    }
-
-    private void ReadNames(BotsConfig bots)
-    {
-        bots.Names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var row in _namedRows.Where(r => !string.IsNullOrWhiteSpace(r.Box.Text)))
-        {
-            bots.Names[row.Box.Text.Trim()] = row.Key;
-        }
-    }
-
     // ---------------------------------------------------------------- Preview
 
     private void Shuffle()
@@ -324,7 +235,6 @@ public partial class MainWindow
         KillerNote.Text = tag switch
         {
             "PLAIN" => _bots.Enabled ? "This name gets no look (Share of PMCs)." : "PMC bot looks are off.",
-            "FIXED" => "A fixed look you gave this name.",
             _ => "",
         };
     }
@@ -337,12 +247,6 @@ public partial class MainWindow
         if (!_bots.Enabled)
         {
             return plain;
-        }
-
-        var named = _bots.Names.FirstOrDefault(n => string.Equals(n.Key, name.Trim(), StringComparison.OrdinalIgnoreCase));
-        if (named.Key != null && _items.FirstOrDefault(i => i.Icon.Key == named.Value)?.Icon is { } fixedIcon)
-        {
-            return (Look(fixedIcon), IconImage(fixedIcon), "FIXED");
         }
 
         var look = BotLookGenerator.For(name, _bots.ToRules());

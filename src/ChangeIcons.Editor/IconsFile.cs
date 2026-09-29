@@ -260,7 +260,6 @@ public class BotsConfig
     [JsonPropertyName("randomColors")] public bool RandomColors { get; set; } = true;
     [JsonPropertyName("animateChance")] public int AnimateChance { get; set; } = 30;
     [JsonPropertyName("maxSpeed")] public double MaxSpeed { get; set; } = 1.0;
-    [JsonPropertyName("names")] public Dictionary<string, string> Names { get; set; } = [];
 
     public Shared.BotRules ToRules() => new()
     {

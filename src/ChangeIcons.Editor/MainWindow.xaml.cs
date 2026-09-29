@@ -849,12 +849,6 @@ public partial class MainWindow : Window
         ProfilePage.Visibility = profile ? Visibility.Visible : Visibility.Collapsed;
         if (bots)
         {
-            // Your icons may have changed since: the fixed-look buttons show them
-            foreach (var row in _namedRows)
-            {
-                row.Pick.Content = IconChoice(row.Key);
-            }
-
             RefreshBotPreview();
         }
 
