@@ -12,7 +12,8 @@ namespace ChangeIcons.Client;
 public class NameColorizer : MonoBehaviour
 {
     private TMP_Text _text;
-    private EMemberCategory _category;
+    // Null for a style set directly (a bot's), which a reload of icons.json leaves alone
+    private EMemberCategory? _category;
     private NameStyle _style;
     private bool _subscribed;
 
@@ -32,7 +33,37 @@ public class NameColorizer : MonoBehaviour
 
         colorizer ??= label.gameObject.AddComponent<NameColorizer>();
         colorizer._text = label;
-        colorizer._category = category.Value;
+        colorizer._category = category;
+        colorizer._style = style;
+        colorizer.Subscribe();
+        colorizer.Recolor();
+    }
+
+    /// <summary>
+    /// Colors a label with a given style rather than a category's (a PMC bot's look). Null puts
+    /// the label back to plain.
+    /// </summary>
+    public static void AttachStyle(TMP_Text label, NameStyle style)
+    {
+        if (label == null)
+        {
+            return;
+        }
+
+        var colorizer = label.GetComponent<NameColorizer>();
+        if (style == null)
+        {
+            if (colorizer != null)
+            {
+                colorizer.Clear();
+            }
+
+            return;
+        }
+
+        colorizer ??= label.gameObject.AddComponent<NameColorizer>();
+        colorizer._text = label;
+        colorizer._category = null;
         colorizer._style = style;
         colorizer.Subscribe();
         colorizer.Recolor();
@@ -43,7 +74,12 @@ public class NameColorizer : MonoBehaviour
     {
         foreach (var colorizer in FindObjectsOfType<NameColorizer>(true))
         {
-            colorizer._style = IconTable.StyleFor(colorizer._category);
+            if (colorizer._category is not { } category)
+            {
+                continue;
+            }
+
+            colorizer._style = IconTable.StyleFor(category);
             if (colorizer._style == null)
             {
                 colorizer.Clear();

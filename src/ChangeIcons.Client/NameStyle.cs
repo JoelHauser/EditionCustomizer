@@ -14,6 +14,10 @@ public class NameStyle
     public bool Letters;
     public float Speed;
 
+    /// <summary>Any number of colors; one gives a plain color (used for bots).</summary>
+    public static NameStyle Create(Color[] colors, bool letters, float speed) =>
+        new() { Colors = colors, Letters = letters, Speed = colors.Length > 1 ? Mathf.Max(0, speed) : 0 };
+
     public static NameStyle From(IconEntry entry)
     {
         if (entry.Colors == null || entry.Colors.Count < 2)

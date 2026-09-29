@@ -204,6 +204,29 @@ public static class IconTable
         return true;
     }
 
+    /// <summary>A PNG under the plugin folder as a sprite, loaded once.</summary>
+    public static Sprite FileSprite(string relativePath) => LoadSprite(relativePath);
+
+    /// <summary>The game's own picture for a member category, whatever icons.json changed.</summary>
+    public static Sprite GameSprite(EMemberCategory category)
+    {
+        if (Originals.Count == 0)
+        {
+            Apply(EFTHardSettings.Instance.ChatSpecialIconSettings);
+        }
+
+        foreach (var pair in Originals)
+        {
+            var row = pair.Value.Rows.FirstOrDefault(r => r.Category == category);
+            if (row?.IconSprite != null)
+            {
+                return row.IconSprite;
+            }
+        }
+
+        return null;
+    }
+
     private static Sprite LoadSprite(string relativePath)
     {
         if (LoadedSprites.TryGetValue(relativePath, out var cached))

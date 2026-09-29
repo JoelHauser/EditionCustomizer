@@ -22,12 +22,13 @@
                                Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" Margin="40,0,0,0" Height="62">
                         <RadioButton x:Name="IconsTab" Style="{StaticResource Tab}" Content="ICONS" GroupName="Page" IsChecked="True" />
+                        <RadioButton x:Name="BotsTab" Style="{StaticResource Tab}" Content="BOTS" GroupName="Page" />
                         <RadioButton x:Name="ProfileTab" Style="{StaticResource Tab}" Content="PROFILE" GroupName="Page" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,18,0" />
-                    <Button x:Name="SaveButton" Style="{StaticResource AccentBtn}" Content="SAVE ICONS" IsEnabled="False" />
+                    <Button x:Name="SaveButton" Style="{StaticResource AccentBtn}" Content="SAVE" IsEnabled="False" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -230,6 +231,121 @@
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
+        </Grid>
+
+        <!-- ============================================================ BOTS -->
+        <Grid x:Name="BotsPage" Grid.Row="1" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="430" />
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Margin="26,22,10,16" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,16,0">
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="PMC BOTS" />
+                            <ToggleButton x:Name="BotsSwitch" Style="{StaticResource Switch}" Content="Give PMC bots their own icon and name colors" />
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                <TextBlock Text="Share of PMCs" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="ShareSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="ShareText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0"
+                                       Text="Each bot's look comes from its name, so a name looks the same in every raid. It shows on the death screen (icon and colors) and in the kill list after a raid (colors). Works with Bot Callsigns Reloaded and Realistic PMC Names: they only decide which names bots get." />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="NAME COLORS THEY CAN GET" />
+                            <WrapPanel>
+                                <ToggleButton x:Name="BotSolid" Style="{StaticResource ChipToggle}" Content="ONE COLOR" />
+                                <ToggleButton x:Name="BotGradient" Style="{StaticResource ChipToggle}" Content="GRADIENT" />
+                                <ToggleButton x:Name="BotLetters" Style="{StaticResource ChipToggle}" Content="PER LETTER" />
+                            </WrapPanel>
+                            <TextBlock Style="{StaticResource Caption}" Text="PRESETS" Margin="0,12,0,8" />
+                            <WrapPanel x:Name="BotPresetPanel" />
+                            <ToggleButton x:Name="BotRandomColors" Style="{StaticResource Switch}" Content="Make up colors too, not only presets" Margin="0,8,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                <TextBlock Text="Animated names" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="BotAnimateSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotAnimateText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock Text="Fastest animation" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="BotSpeedSlider" Width="260" Minimum="0.1" Maximum="2" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotSpeedText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button x:Name="BotIconsAll" Style="{StaticResource GhostBtn}" Content="ALL" />
+                                    <Button x:Name="BotIconsNone" Style="{StaticResource GhostBtn}" Content="NONE" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="ICONS THEY CAN GET" />
+                            </DockPanel>
+                            <TextBlock x:Name="BotIconCount" Style="{StaticResource Hint}" Margin="0,0,0,10" />
+                            <ListBox x:Name="BotIconGallery" Style="{StaticResource Gallery}" SelectionMode="Multiple" Height="236" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="BOTS WITH A FIXED LOOK" />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,0,0,12"
+                                       Text="Give a particular bot name one of your icons: its picture and its name colors. The name has to match (capitals don't matter)." />
+                            <StackPanel x:Name="NamedPanel" />
+                            <Button x:Name="AddNamedButton" Content="+ ADD A NAME" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Column="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+                <DockPanel Margin="22,22,22,16">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Text="DEATH SCREEN" Margin="0,0,0,8" />
+                    <Border DockPanel.Dock="Top" CornerRadius="8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="20,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#1C1414" Offset="0" />
+                                <GradientStop Color="#0B0C0D" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel>
+                            <TextBlock Text="KILLED BY" Style="{StaticResource Caption}" FontSize="11" Foreground="#B0655A" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Image x:Name="KillerIcon" Width="30" Height="30" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <local:StyledName x:Name="KillerName" FontSize="28" FontWeight="Bold" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock x:Name="KillerNote" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="11" />
+                        </StackPanel>
+                    </Border>
+                    <TextBox DockPanel.Dock="Top" x:Name="TryNameBox" Tag="Try any bot name" Margin="0,12,0,0" />
+                    <DockPanel DockPanel.Dock="Top" Margin="0,18,0,4">
+                        <Button DockPanel.Dock="Right" x:Name="ShuffleButton" Style="{StaticResource GhostBtn}" Content="SHUFFLE" />
+                        <TextBlock Style="{StaticResource Caption}" Text="PMC BOTS IN YOUR RAIDS" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock DockPanel.Dock="Top" x:Name="NameSourceText" Style="{StaticResource Hint}" Margin="0,0,0,8" />
+                    <ListBox x:Name="BotSampleList" Style="{StaticResource CleanList}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Height="34">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Tag}" Style="{StaticResource Caption}" FontSize="10.5" VerticalAlignment="Center" />
+                                    <Image Source="{Binding Thumbnail}" Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                    <local:StyledName Text="{Binding DisplayName}" Look="{Binding Look}" FontSize="16" VerticalAlignment="Center" ClipToBounds="True" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
         </Grid>
 
         <!-- ============================================================ PROFILE -->

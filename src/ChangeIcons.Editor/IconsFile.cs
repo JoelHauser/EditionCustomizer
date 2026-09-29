@@ -63,6 +63,9 @@ public class IconsFile
     [JsonPropertyName("icons")]
     public List<Entry> Icons { get; set; } = [];
 
+    [JsonPropertyName("bots")]
+    public BotsConfig? Bots { get; set; }
+
     public class Entry
     {
         [JsonPropertyName("category")] public string Category { get; set; } = "";
@@ -244,4 +247,31 @@ public static class Categories
 
         throw new InvalidOperationException("No free icon slots left");
     }
+}
+
+/// <summary>"bots" in icons.json, as the plugin reads it (see ChangeIcons.Client.BotConfig).</summary>
+public class BotsConfig
+{
+    [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
+    [JsonPropertyName("share")] public int Share { get; set; } = 100;
+    [JsonPropertyName("icons")] public List<string> Icons { get; set; } = [];
+    [JsonPropertyName("modes")] public List<string> Modes { get; set; } = ["solid", "gradient", "letters"];
+    [JsonPropertyName("palettes")] public List<List<string>> Palettes { get; set; } = [];
+    [JsonPropertyName("randomColors")] public bool RandomColors { get; set; } = true;
+    [JsonPropertyName("animateChance")] public int AnimateChance { get; set; } = 30;
+    [JsonPropertyName("maxSpeed")] public double MaxSpeed { get; set; } = 1.0;
+    [JsonPropertyName("names")] public Dictionary<string, string> Names { get; set; } = [];
+
+    public Shared.BotRules ToRules() => new()
+    {
+        Share = Math.Clamp(Share, 0, 100),
+        Icons = [.. Icons],
+        Solid = Modes.Contains("solid"),
+        Gradient = Modes.Contains("gradient"),
+        Letters = Modes.Contains("letters"),
+        Palettes = Palettes.Where(p => p.Count > 0).Select(p => p.ToArray()).ToArray(),
+        RandomColors = RandomColors,
+        AnimateChance = Math.Clamp(AnimateChance, 0, 100),
+        MaxSpeed = MaxSpeed,
+    };
 }

@@ -46,6 +46,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The bot look generator, shared with the editor so its preview matches the game -->
+    <Compile Include="..\Shared\BotLooks.cs" Link="Shared\BotLooks.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="icons.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="icons\**\*.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

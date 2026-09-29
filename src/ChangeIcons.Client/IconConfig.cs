@@ -18,6 +18,9 @@ public class IconConfig
     [JsonProperty("icons")]
     public List<IconEntry> Icons = new();
 
+    [JsonProperty("bots")]
+    public BotConfig Bots;
+
     public static IconConfig Load(string path) =>
         JsonConvert.DeserializeObject<IconConfig>(File.ReadAllText(path)) ?? new IconConfig();
 }
@@ -74,4 +77,45 @@ public class IconEntry
     /// </summary>
     [JsonProperty("iconFrom")]
     public string IconFrom;
+}
+
+/// <summary>
+/// "bots" in icons.json: looks for PMC bots, worked out from each bot's name so the same name
+/// always looks the same.
+/// </summary>
+public class BotConfig
+{
+    [JsonProperty("enabled")]
+    public bool Enabled;
+
+    /// <summary>Percent of PMC bots that get a look.</summary>
+    [JsonProperty("share")]
+    public int Share = 100;
+
+    /// <summary>Icon pool: paths under the plugin folder, or "member:Unheard".</summary>
+    [JsonProperty("icons")]
+    public List<string> Icons = new();
+
+    /// <summary>
+    /// Any of "solid", "gradient", "letters"; missing means all three. (No default list here:
+    /// Newtonsoft adds to an existing list instead of replacing it.)
+    /// </summary>
+    [JsonProperty("modes")]
+    public List<string> Modes;
+
+    [JsonProperty("palettes")]
+    public List<List<string>> Palettes = new();
+
+    [JsonProperty("randomColors")]
+    public bool RandomColors = true;
+
+    [JsonProperty("animateChance")]
+    public int AnimateChance = 30;
+
+    [JsonProperty("maxSpeed")]
+    public double MaxSpeed = 1.0;
+
+    /// <summary>Bot name -> one of your icons ("2048", "Unheard"): that bot always gets it.</summary>
+    [JsonProperty("names")]
+    public Dictionary<string, string> Names = new();
 }

@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace ChangeIcons.Client;
 
-[BepInPlugin("com.evgencheg.changeicons.client", "ChangeIcons.Client", "1.1.0")]
+[BepInPlugin("com.evgencheg.changeicons.client", "ChangeIcons.Client", "1.2.0")]
 public class Plugin : BaseUnityPlugin
 {
     public static ManualLogSource Log;
@@ -28,6 +28,7 @@ public class Plugin : BaseUnityPlugin
         _configPath = Path.Combine(Folder, "icons.json");
 
         Settings = LoadConfig() ?? new IconConfig { DumpOriginalIcons = false };
+        BotLooks.Configure(Settings.Bots);
         new Harmony("com.evgencheg.changeicons.client").PatchAll(typeof(Plugin).Assembly);
 
         // The editor saves icons.json and icons\*.png; pick those up without a restart
@@ -81,6 +82,7 @@ public class Plugin : BaseUnityPlugin
             if (config != null)
             {
                 Settings = config;
+                BotLooks.Configure(config.Bots);
                 IconTable.Reload();
                 Log.LogInfo("Reloaded icons.json. Reopen a screen to see the change.");
             }

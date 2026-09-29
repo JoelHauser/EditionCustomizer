@@ -8,7 +8,8 @@
 > **Status:** everything builds, and the editor was tested against a copy of an SPT 4.1
 > install: reading the game's icons, saving `icons.json`, and writing a profile. The client
 > plugin has **not been run in game yet**. The first things to check there are the multi-color
-> nicknames (`NameColorizer`) and the live reload of `icons.json`.
+> nicknames (`NameColorizer`), the live reload of `icons.json`, and PMC bot looks on the death
+> screen and kill list.
 
 Adds icons to your account: Sherpa, Emissary, Developer, Unheard or Edge of Darkness.
 
@@ -43,6 +44,16 @@ nicknames in as many colors as you like.
   (`icons/library`, drawn by `scripts/make_icons.py`), imports and recolors images, and sets which
   icons a character has and which one is shown. It only writes a profile while the SPT server is
   closed, and backs it up to `backups/` first.
+
+**PMC bots** can get looks too: an icon from the library or the member icons, and a name in one
+color, a gradient or a color per letter, from the presets or made-up colors, optionally moving.
+A bot's look is worked out from its name (`src/Shared/BotLooks.cs`, compiled into both the plugin
+and the editor), so the same name looks the same every raid and nothing is stored on bots or
+profiles. It shows on the death screen ("killed by": icon and colors) and in the kill list after a
+raid (colors). Specific names can be given one of your icons. Because only the final name matters,
+it works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns-reloaded) and
+[Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews real
+names from whichever of them is installed.
 
 The server command takes the new flags too: `spt membercategory unheard+uniqueid+2048`.
 

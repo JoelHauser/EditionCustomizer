@@ -1,3 +1,4 @@
+using System.Linq;
 using EFT;
 using EFT.UI;
 using EFT.UI.Settings;
@@ -91,5 +92,53 @@ public static class ProfileIconLabelPatch
             : $"<sprite index={ChatSpecialIconSettings.GetAtlasIconId(data.Category)} color=white>";
         __result = sprite + body;
         return false;
+    }
+}
+
+/// <summary>
+/// "Killed by" on the death screen: a PMC bot's own icon and colors, from its name.
+/// </summary>
+[HarmonyPatch]
+public static class DeathScreenPatch
+{
+    public static System.Reflection.MethodBase TargetMethod() =>
+        AccessTools.GetDeclaredMethods(typeof(EFT.UI.SessionEnd.SessionResultExitStatus))
+            .First(m => m.Name == nameof(EFT.UI.SessionEnd.SessionResultExitStatus.Show) && m.GetParameters().Length == 7);
+
+    public static void Postfix(EFT.UI.SessionEnd.SessionResultExitStatus __instance, Profile activeProfile)
+    {
+        var panel = __instance._killerNamePanel;
+        var aggressor = activeProfile?.EftStats?.Aggressor;
+        if (panel == null || aggressor == null)
+        {
+            return;
+        }
+
+        var look = BotLooks.IsPmcBot(aggressor.Role) ? BotLooks.For(aggressor.Name) : null;
+        if (look != null)
+        {
+            BotLooks.ApplyTo(panel, look);
+            return;
+        }
+
+        // The panel is reused raid after raid: give the name back what its category gives it
+        // (one of your styled icons, or plain), not the last bot's colors
+        var shown = aggressor.Side != EPlayerSide.Savage ? aggressor.Category : EMemberCategory.Default;
+        var row = EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(shown);
+        NameColorizer.Attach(panel._name, row?.Category);
+    }
+}
+
+/// <summary>
+/// The kill list after a raid: PMC bots you killed get their colors (the list has no icons).
+/// </summary>
+[HarmonyPatch(typeof(EFT.UI.SessionEnd.KillListVictim), nameof(EFT.UI.SessionEnd.KillListVictim.Show))]
+public static class KillListPatch
+{
+    public static void Postfix(EFT.UI.SessionEnd.KillListVictim __instance, VictimStats victim, bool knownName)
+    {
+        // Rows are reused, so a row without a look is put back to plain
+        var look = knownName && victim != null && BotLooks.IsPmcBot(victim.Role) ? BotLooks.For(victim.Name) : null;
+        NameColorizer.AttachStyle(__instance._name, look?.Style);
     }
 }

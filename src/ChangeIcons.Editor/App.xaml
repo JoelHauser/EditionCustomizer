@@ -188,6 +188,38 @@
             </Setter>
         </Style>
 
+        <!-- Toggle chip: like a segment, but any number can be on -->
+        <Style x:Key="ChipToggle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource Heading}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Box" Background="{StaticResource Panel2Brush}" BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="5" Padding="14,6">
+                            <ContentPresenter x:Name="Content" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.45" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource HoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Box" Property="Background" Value="#262419" />
+                                <Setter TargetName="Content" Property="Opacity" Value="1" />
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- On/off switch -->
         <Style x:Key="Switch" TargetType="ToggleButton">
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />

@@ -33,6 +33,7 @@ public partial class MainWindow : Window
 
     private const string StandardGray = "#C3CDD3";
 
+    private readonly string _sptPath;
     private readonly string _pluginFolder;
     private readonly string _iconsJson;
     private readonly GameAssets _game;
@@ -53,6 +54,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        _sptPath = sptPath;
         _pluginFolder = Path.Combine(sptPath, "BepInEx", "plugins", "ChangeIcons");
         _iconsJson = Path.Combine(_pluginFolder, "icons.json");
         _game = new GameAssets(sptPath, _pluginFolder);
@@ -67,8 +69,9 @@ public partial class MainWindow : Window
         Loaded += async (_, _) => await Start();
         Closing += OnClosing;
 
-        IconsTab.Checked += (_, _) => ShowPage(profile: false);
-        ProfileTab.Checked += (_, _) => ShowPage(profile: true);
+        IconsTab.Checked += (_, _) => ShowPage();
+        BotsTab.Checked += (_, _) => ShowPage();
+        ProfileTab.Checked += (_, _) => ShowPage();
         SaveButton.Click += (_, _) => Save();
 
         IconList.SelectionChanged += (_, _) => ShowCurrent();
@@ -129,6 +132,7 @@ public partial class MainWindow : Window
         _serverTimer.Tick += (_, _) => UpdateServerState();
 
         BuildPresets();
+        WireBots();
     }
 
     private async Task Start()
@@ -144,9 +148,10 @@ public partial class MainWindow : Window
         }
 
         _nickname = _profiles.List().FirstOrDefault(p => p.HasCharacter)?.Nickname ?? "Nickname";
-        LoadIcons();
-        ShowGallery();
         SetStatus("");
+        LoadIcons();
+        LoadBots();
+        ShowGallery();
     }
 
     // ---------------------------------------------------------------- Reading the game
@@ -777,6 +782,7 @@ public partial class MainWindow : Window
                 file.Icons.Add(IconsFile.FromEditable(icon, baked));
             }
 
+            file.Bots = _bots;
             Directory.CreateDirectory(_pluginFolder);
             file.Save(_iconsJson);
         }
@@ -815,15 +821,29 @@ public partial class MainWindow : Window
 
     // ---------------------------------------------------------------- Profile page
 
-    private void ShowPage(bool profile)
+    private void ShowPage()
     {
         if (!IsLoaded)
         {
             return;
         }
 
-        IconsPage.Visibility = profile ? Visibility.Collapsed : Visibility.Visible;
+        var profile = ProfileTab.IsChecked == true;
+        var bots = BotsTab.IsChecked == true;
+        IconsPage.Visibility = !profile && !bots ? Visibility.Visible : Visibility.Collapsed;
+        BotsPage.Visibility = bots ? Visibility.Visible : Visibility.Collapsed;
         ProfilePage.Visibility = profile ? Visibility.Visible : Visibility.Collapsed;
+        if (bots)
+        {
+            // Your icons may have changed since: the fixed-look buttons show them
+            foreach (var row in _namedRows)
+            {
+                row.Pick.Content = IconChoice(row.Key);
+            }
+
+            RefreshBotPreview();
+        }
+
         if (profile)
         {
             LoadProfiles();
