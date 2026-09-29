@@ -3,22 +3,30 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <RootNamespace>ChangeIcons.Editor</RootNamespace>
     <AssemblyName>ChangeIcons.Editor</AssemblyName>
-    <Version>1.0.0</Version>
-    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Version>2.0.0</Version>
 
     <!--
       One exe, so it can sit in BepInEx\plugins\ChangeIcons without BepInEx trying to load a DLL:
-        dotnet publish -c Release -r win-x64
+        dotnet publish -c Release -o dist/editor
     -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reads the game's icons out of resources.assets -->
+    <PackageReference Include="AssetsTools.NET" Version="3.0.5" />
+    <PackageReference Include="AssetsTools.NET.Texture" Version="3.0.2" />
+    <!-- Unity class layouts for AssetsTools; the game's files don't carry their own -->
+    <EmbeddedResource Include="Assets\classdata.tpk" LogicalName="classdata.tpk" />
+  </ItemGroup>
 
 </Project>

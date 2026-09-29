@@ -1,26 +1,31 @@
+using System.IO;
+using System.Windows;
+using Microsoft.Win32;
+
 namespace ChangeIcons.Editor;
 
-internal static class Program
+public partial class App : Application
 {
-    [STAThread]
-    private static void Main(string[] args)
+    protected override void OnStartup(StartupEventArgs e)
     {
-        ApplicationConfiguration.Initialize();
+        base.OnStartup(e);
 
-        var sptPath = FindSpt(args);
+        var sptPath = FindSpt(e.Args);
         if (sptPath == null)
         {
-            using var dialog = new FolderBrowserDialog { Description = "Pick your SPT folder (the one with EscapeFromTarkov.exe)", UseDescriptionForTitle = true };
-            if (dialog.ShowDialog() != DialogResult.OK || !IsSpt(dialog.SelectedPath))
+            var dialog = new OpenFolderDialog { Title = "Pick your SPT folder (the one with EscapeFromTarkov.exe)" };
+            if (dialog.ShowDialog() != true || !IsSpt(dialog.FolderName))
             {
-                MessageBox.Show("That isn't an SPT folder: it needs EscapeFromTarkov.exe and BepInEx.", "ChangeIcons Editor", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("That isn't an SPT folder: it needs EscapeFromTarkov.exe and BepInEx.", "ChangeIcons Editor", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Shutdown();
                 return;
             }
 
-            sptPath = dialog.SelectedPath;
+            sptPath = dialog.FolderName;
         }
 
-        Application.Run(new MainForm(sptPath));
+        MainWindow = new MainWindow(sptPath);
+        MainWindow.Show();
     }
 
     private static bool IsSpt(string path) =>

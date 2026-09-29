@@ -20,15 +20,19 @@ Trader, Group, System and other service flags can't be set, they break the profi
 
 ## Custom icons (this branch)
 
-Two more pieces make the icons themselves customizable: new icons, your own pictures, any colors.
+Three more pieces make the icons themselves customizable: new icons, your own pictures, and
+nicknames in as many colors as you like.
 
 - **ChangeIcons.Client** (BepInEx plugin, `BepInEx/plugins/ChangeIcons`) reads `icons.json` and
   changes the game's icon table: recolor or replace the existing icons, or add new ones on free
-  flags (2048, 4096, ...). It reloads `icons.json` while the game runs; reopen a screen to see it.
-  On first start it saves the game's own icons to `originals/` as templates.
-- **ChangeIcons Editor.exe** (in the same folder) edits all of that with a preview, imports and
-  recolors images, and sets which icons a profile has and which one is shown. It only writes a
-  profile while the SPT server is closed, and backs it up to `backups/` first.
+  flags (2048, 4096, ...). Nicknames can be one color, a gradient across the name, or a color per
+  letter, still or moving. It reloads `icons.json` while the game runs; reopen a screen to see it.
+- **ChangeIcons Editor.exe** (same folder) edits all of that with a live preview. It reads every
+  icon straight out of the game's `resources.assets` into `game-icons/` (about 1,100, plus the
+  member icon table with the game's own colors), comes with a library of 31 extra icons
+  (`icons/library`, drawn by `scripts/make_icons.py`), imports and recolors images, and sets which
+  icons a character has and which one is shown. It only writes a profile while the SPT server is
+  closed, and backs it up to `backups/` first.
 
 The server command takes the new flags too: `spt membercategory unheard+uniqueid+2048`.
 
@@ -38,9 +42,13 @@ shows as its name only, and a replaced icon keeps the game's original small pict
 ```
 dotnet build src/ChangeIcons.Client/ChangeIcons.Client.csproj -c Release -p:SPTPath="H:\SPT4.1.X" -p:DeployToSPT=true
 dotnet publish src/ChangeIcons.Editor/ChangeIcons.Editor.csproj -c Release -o dist/editor
+python scripts/make_icons.py
 ```
 
-The client compiles against the install's Assembly-CSharp, so the install must have been launched once.
+The client compiles against the install's Assembly-CSharp, so the install must have been launched
+once. The editor reads the game's files with [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET);
+`src/ChangeIcons.Editor/Assets/classdata.tpk` is its class database, from
+[UABEA](https://github.com/nesrak1/UABEA) (MIT).
 
 ## Installation
 

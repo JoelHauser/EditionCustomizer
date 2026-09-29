@@ -1,3 +1,4 @@
+using System.IO;
 using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -99,9 +100,7 @@ public class Profiles(string sptPath, string backupFolder)
             throw new InvalidDataException("The rewritten profile didn't read back the same; nothing was saved");
         }
 
-        var temp = profile.Path + ".tmp";
-        File.WriteAllText(temp, output);
-        File.Move(temp, profile.Path, overwrite: true);
+        Io.ReplaceText(profile.Path, output);
         return backup;
     }
 }

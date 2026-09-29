@@ -1,3 +1,4 @@
+using EFT;
 using EFT.UI;
 using EFT.UI.Settings;
 using HarmonyLib;
@@ -31,6 +32,28 @@ public static class GetDataByMemberCategoryPatch
 }
 
 /// <summary>
+/// Nickname labels next to an icon: the game sets one color, this adds the multi-color ones.
+/// </summary>
+[HarmonyPatch(typeof(ChatSpecialIcon), nameof(ChatSpecialIcon.Show), typeof(EMemberCategory), typeof(string), typeof(bool), typeof(int))]
+public static class ChatSpecialIconShowPatch
+{
+    public static void Postfix(ChatSpecialIcon __instance, EMemberCategory category, bool isNameColored)
+    {
+        var label = __instance._specialLabel;
+        if (label == null)
+        {
+            return;
+        }
+
+        // Show returns early without coloring when there's no icon image
+        var row = __instance._icon != null && isNameColored
+            ? EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(category)
+            : null;
+        NameColorizer.Attach(label, row?.Category);
+    }
+}
+
+/// <summary>
 /// The settings dropdown reads the table directly, without the lookup above.
 /// </summary>
 [HarmonyPatch(typeof(GameSettingsTab), nameof(GameSettingsTab.ShowProfileIcons))]
@@ -43,21 +66,30 @@ public static class ShowProfileIconsPatch
 }
 
 /// <summary>
-/// Dropdown label: the game writes an inline atlas sprite plus the translated category name.
-/// A custom category has neither, so it gets its name in its color.
+/// Dropdown label: the game writes an inline atlas sprite plus the translated category name in
+/// one color. This writes our name and colors; a custom category has no atlas sprite, so it
+/// gets none.
 /// </summary>
 [HarmonyPatch(typeof(GameSettingsTab.CG_Class3211), nameof(GameSettingsTab.CG_Class3211.method_2))]
 public static class ProfileIconLabelPatch
 {
     public static bool Prefix(IconsData data, ref string __result)
     {
-        if (!IconTable.Named.Contains(data.Category))
+        var style = IconTable.StyleFor(data.Category);
+        var named = IconTable.Named.Contains(data.Category);
+        if (!named && style == null)
         {
             return true;
         }
 
-        var color = "#" + UnityEngine.ColorUtility.ToHtmlStringRGBA(data.IconColor);
-        __result = $"<color={color}>{data.Name}</color>";
+        var text = named ? data.Name : data.Category.Localized(EStringCase.None);
+        var body = style != null
+            ? style.RichText(text)
+            : $"<color=#{UnityEngine.ColorUtility.ToHtmlStringRGBA(data.IconColor)}>{text}</color>";
+        var sprite = IconTable.IsCustom(data.Category)
+            ? ""
+            : $"<sprite index={ChatSpecialIconSettings.GetAtlasIconId(data.Category)} color=white>";
+        __result = sprite + body;
         return false;
     }
 }

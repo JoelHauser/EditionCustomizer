@@ -22,6 +22,11 @@ public static class IconTable
     // Categories whose dropdown label should be our name rather than the game's translation
     public static readonly HashSet<EMemberCategory> Named = new();
 
+    // Multi-color nicknames by category
+    private static readonly Dictionary<EMemberCategory, NameStyle> Styles = new();
+
+    public static NameStyle StyleFor(EMemberCategory category) => Styles.TryGetValue(category, out var style) ? style : null;
+
     private static readonly Dictionary<string, Sprite> LoadedSprites = new();
     private static bool _dumped;
 
@@ -54,6 +59,7 @@ public static class IconTable
     {
         LoadedSprites.Clear();
         Named.Clear();
+        Styles.Clear();
 
         foreach (var pair in Originals)
         {
@@ -66,6 +72,8 @@ public static class IconTable
             pair.Key.Priority = pair.Value.Priority.ToArray();
             ApplyConfig(pair.Key);
         }
+
+        NameColorizer.RefreshAll();
     }
 
     private static IconsData Copy(IconsData row) =>
@@ -115,6 +123,14 @@ public static class IconTable
                     {
                         Plugin.Log.LogWarning($"Icon {entry.Category}: \"{entry.Color}\" isn't a color, use #RRGGBB");
                     }
+                }
+
+                // Places that take one color get the first
+                var style = NameStyle.From(entry);
+                if (style != null)
+                {
+                    Styles[category] = style;
+                    row.IconColor = style.Colors[0];
                 }
 
                 if (!string.IsNullOrEmpty(entry.Icon))

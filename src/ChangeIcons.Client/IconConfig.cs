@@ -46,6 +46,24 @@ public class IconEntry
     public string Color;
 
     /// <summary>
+    /// Several nickname colors. With two or more they replace "color": a gradient across the
+    /// name, or one color per letter.
+    /// </summary>
+    [JsonProperty("colors")]
+    public List<string> Colors;
+
+    /// <summary>"gradient" (default) or "letters".</summary>
+    [JsonProperty("colorMode")]
+    public string ColorMode;
+
+    /// <summary>
+    /// Moves the colors along the name: gradient cycles per second, or letter steps per second
+    /// divided by 4. 0 keeps them still.
+    /// </summary>
+    [JsonProperty("animate")]
+    public float Animate;
+
+    /// <summary>
     /// PNG path relative to the plugin folder.
     /// </summary>
     [JsonProperty("icon")]
