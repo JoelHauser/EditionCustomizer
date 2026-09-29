@@ -135,9 +135,25 @@ public partial class MainWindow : Window
 
     private async Task Start()
     {
-        if (!Directory.Exists(_pluginFolder))
+        // The DLLs, not the folders: the editor itself creates the plugin folder for game-icons
+        var missing = new List<string>();
+        if (!File.Exists(Path.Combine(_pluginFolder, "ChangeIcons.Client.dll")))
         {
-            MessageBox.Show(this, $"The ChangeIcons plugin isn't installed:\n{_pluginFolder}", Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            missing.Add(@"BepInEx\plugins\ChangeIcons\ChangeIcons.Client.dll (icons, colors, bots)");
+        }
+
+        if (!File.Exists(Path.Combine(_sptPath, "SPT_Runtime", "user", "mods", "ChangeIcons", "ChangeIcons.dll")))
+        {
+            missing.Add(@"SPT_Runtime\user\mods\ChangeIcons\ChangeIcons.dll (server mod)");
+        }
+
+        if (missing.Count > 0)
+        {
+            MessageBox.Show(this,
+                $"This SPT folder is missing part of the mod:\n\n{string.Join("\n", missing)}\n\n"
+                + $"Unpack the whole EditionCustomizer zip into {_sptPath} (it adds those files next to this editor), "
+                + "then restart the game. You can keep editing meanwhile; your changes are saved for when it's installed.",
+                Title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         if (!_game.Extracted || _game.Stale)
