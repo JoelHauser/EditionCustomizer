@@ -55,6 +55,22 @@ public static class ChatSpecialIconShowPatch
 }
 
 /// <summary>
+/// A name panel (main menu, death screen, raid countdown): the colors go on whichever of its two
+/// labels shows the nickname. Normally the big one; a mod can rearrange the panel, as the deploy
+/// screen does on the countdown, putting the map in the big line and the name in the small one.
+/// </summary>
+[HarmonyPatch(typeof(PlayerNamePanel), nameof(PlayerNamePanel.Set), typeof(bool), typeof(EMemberCategory), typeof(string), typeof(int), typeof(int))]
+public static class PlayerNamePanelPatch
+{
+    public static void Postfix(PlayerNamePanel __instance, bool showDetails, EMemberCategory category, string nickname)
+    {
+        var row = EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(showDetails ? category : EMemberCategory.Default);
+        NameColorizer.Attach(__instance._name, row?.Category, nickname);
+        NameColorizer.Attach(__instance._description, row?.Category, nickname);
+    }
+}
+
+/// <summary>
 /// The settings dropdown reads the table directly, without the lookup above.
 /// </summary>
 [HarmonyPatch(typeof(GameSettingsTab), nameof(GameSettingsTab.ShowProfileIcons))]
@@ -117,7 +133,7 @@ public static class DeathScreenPatch
         var look = BotLooks.IsPmcBot(aggressor.Role) ? BotLooks.For(aggressor.Name) : null;
         if (look != null)
         {
-            BotLooks.ApplyTo(panel, look);
+            BotLooks.ApplyTo(panel, look, panel._name != null ? panel._name.text : null);
             return;
         }
 
@@ -125,7 +141,7 @@ public static class DeathScreenPatch
         // (one of your styled icons, or plain), not the last bot's colors
         var shown = aggressor.Side != EPlayerSide.Savage ? aggressor.Category : EMemberCategory.Default;
         var row = EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(shown);
-        NameColorizer.Attach(panel._name, row?.Category);
+        NameColorizer.Attach(panel._name, row?.Category, panel._name != null ? panel._name.text : null);
     }
 }
 

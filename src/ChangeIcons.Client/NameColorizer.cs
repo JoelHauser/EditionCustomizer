@@ -17,7 +17,12 @@ public class NameColorizer : MonoBehaviour
     private NameStyle _style;
     private bool _subscribed;
 
-    public static void Attach(TMP_Text label, EMemberCategory? category)
+    // When set, the label is only colored while it shows this text. Another mod can write
+    // something else into a name label (the deploy screen puts the map's name there); that must
+    // not come out in the player's colors.
+    private string _expected;
+
+    public static void Attach(TMP_Text label, EMemberCategory? category, string expected = null)
     {
         var colorizer = label.GetComponent<NameColorizer>();
         var style = category == null ? null : IconTable.StyleFor(category.Value);
@@ -35,6 +40,7 @@ public class NameColorizer : MonoBehaviour
         colorizer._text = label;
         colorizer._category = category;
         colorizer._style = style;
+        colorizer._expected = expected;
         colorizer.Subscribe();
         colorizer.Recolor();
     }
@@ -43,7 +49,7 @@ public class NameColorizer : MonoBehaviour
     /// Colors a label with a given style rather than a category's (a PMC bot's look). Null puts
     /// the label back to plain.
     /// </summary>
-    public static void AttachStyle(TMP_Text label, NameStyle style)
+    public static void AttachStyle(TMP_Text label, NameStyle style, string expected = null)
     {
         if (label == null)
         {
@@ -65,6 +71,7 @@ public class NameColorizer : MonoBehaviour
         colorizer._text = label;
         colorizer._category = null;
         colorizer._style = style;
+        colorizer._expected = expected;
         colorizer.Subscribe();
         colorizer.Recolor();
     }
@@ -151,6 +158,13 @@ public class NameColorizer : MonoBehaviour
     private void Recolor()
     {
         if (_style == null || _text == null || !_text.isActiveAndEnabled)
+        {
+            return;
+        }
+
+        // Showing something other than the name it was colored for: leave it the plain color
+        // TextMeshPro has just built
+        if (_expected != null && _text.text != _expected)
         {
             return;
         }

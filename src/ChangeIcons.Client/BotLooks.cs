@@ -147,14 +147,14 @@ public static class BotLooks
     /// Puts a bot's look on a name panel (the death screen's killer): its icon on the panel's
     /// icon, its colors on the name.
     /// </summary>
-    public static void ApplyTo(PlayerNamePanel panel, Look look)
+    public static void ApplyTo(PlayerNamePanel panel, Look look, string name)
     {
         if (panel == null || look == null)
         {
             return;
         }
 
-        NameColorizer.AttachStyle(panel._name, look.Style);
+        NameColorizer.AttachStyle(panel._name, look.Style, name);
         if (look.Icon != null && panel._icon != null && panel._icon._icon != null)
         {
             panel._icon._icon.sprite = look.Icon;
