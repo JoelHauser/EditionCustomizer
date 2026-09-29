@@ -6,7 +6,7 @@ namespace ChangeIcons;
 
 public sealed record ModMetadata : IModMetadata
 {
-    public string ModGuid { get; init; } = "com.evgencheg.changeicons";
+    public string ModGuid { get; init; } = "com.mybutthasarash.editioncustomizer";
     public string Name { get; init; } = "ChangeIcons";
     public string Author { get; init; } = "Evgencheg";
     public List<string>? Contributors { get; init; }
