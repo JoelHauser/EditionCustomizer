@@ -1,0 +1,14 @@
+{
+  // Saves the game's own icons to originals\ as PNGs, to use as templates
+  "dumpOriginalIcons": true,
+
+  "icons": [
+    // A new icon. Give your profile the same number with: spt membercategory unheard+uniqueid+2048
+    // New icons use free flags only: 2048, 4096, 8192, ...
+    { "category": "2048", "name": "My Edition", "color": "#33CCFF", "icon": "icons/my-edition.png" }
+
+    // Change an existing one: name, color, icon (a PNG) or iconFrom (another game icon), all optional
+    // , { "category": "Unheard", "color": "#FF8800" }
+    // , { "category": "UniqueId", "name": "EOD", "color": "#E0C060", "iconFrom": "Sherpa" }
+  ]
+}

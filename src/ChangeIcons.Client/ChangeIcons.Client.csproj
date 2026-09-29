@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net472 because that is what the game's mono runtime loads. -->
+    <TargetFramework>net472</TargetFramework>
+    <RootNamespace>ChangeIcons.Client</RootNamespace>
+    <AssemblyName>ChangeIcons.Client</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <Version>1.0.0</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <SPTPath Condition="'$(SPTPath)' == ''">$(SPT_PATH)</SPTPath>
+    <SPTPath Condition="'$(SPTPath)' != ''">$(SPTPath.TrimEnd('\'))</SPTPath>
+    <GameManaged>$(SPTPath)\EscapeFromTarkov_Data\Managed</GameManaged>
+    <BepInExCore>$(SPTPath)\BepInEx\core</BepInExCore>
+    <DeployToSPT Condition="'$(DeployToSPT)' == ''">false</DeployToSPT>
+  </PropertyGroup>
+
+  <!--
+      dotnet build -c Release -p:SPTPath="H:\SPT4.1.X" [-p:DeployToSPT=true]
+
+    Compiled against the Assembly-CSharp in Managed, so the install must have been launched
+    at least once: the SPT Launcher patches that file in place on first start, and only the
+    patched copy has the names this plugin uses. An unpatched copy is ~15.99 MB.
+  -->
+  <Target Name="ValidateSPTPath" BeforeTargets="BeforeBuild">
+    <Error Condition="'$(SPTPath)' == ''" Text="SPTPath is not set. e.g. -p:SPTPath=H:\SPT4.1.X" />
+    <Error Condition="!Exists('$(BepInExCore)\BepInEx.dll')" Text="SPTPath ('$(SPTPath)') is not an SPT install root: no BepInEx\core\BepInEx.dll." />
+    <Error Condition="!Exists('$(GameManaged)\Assembly-CSharp.dll')" Text="No Assembly-CSharp.dll under '$(GameManaged)'." />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="BepInEx"><HintPath>$(BepInExCore)\BepInEx.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(BepInExCore)\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Assembly-CSharp"><HintPath>$(GameManaged)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Sirenix.Serialization"><HintPath>$(GameManaged)\Sirenix.Serialization.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(GameManaged)\Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(GameManaged)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameManaged)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>$(GameManaged)\UnityEngine.ImageConversionModule.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icons.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="icons\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Never overwrites an icons.json that is already installed: that file is the user's. -->
+  <Target Name="DeployToSPT" AfterTargets="Build" Condition="'$(DeployToSPT)' == 'true'">
+    <PropertyGroup>
+      <PluginDir>$(SPTPath)\BepInEx\plugins\ChangeIcons</PluginDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <IconFiles Include="$(OutDir)icons\**\*.png" />
+    </ItemGroup>
+    <MakeDir Directories="$(PluginDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginDir)" />
+    <Copy SourceFiles="$(OutDir)icons.json" DestinationFolder="$(PluginDir)" Condition="!Exists('$(PluginDir)\icons.json')" />
+    <Copy SourceFiles="@(IconFiles)" DestinationFolder="$(PluginDir)\icons\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

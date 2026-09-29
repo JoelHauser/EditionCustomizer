@@ -21,7 +21,12 @@ public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveS
         | MemberCategory.ChatModeratorWithPermanentBan
         | MemberCategory.UnitTest;
 
-    private static readonly MemberCategory Allowed = Enum.GetValues<MemberCategory>().Aggregate((a, b) => a | b) & ~Blocked;
+    private static readonly MemberCategory Builtin = Enum.GetValues<MemberCategory>().Aggregate((a, b) => a | b);
+
+    // Free flags above the game's own (2048, 4096, ...), drawn by the ChangeIcons.Client plugin
+    private const MemberCategory Custom = (MemberCategory)0x7FFFF800;
+
+    private static readonly MemberCategory Allowed = (Builtin & ~Blocked) | Custom;
 
     public string Command => "membercategory";
 
@@ -29,7 +34,7 @@ public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveS
         "spt membercategory\n========\nChanges the icons on your account.\n\n"
         + "\tspt membercategory\n\t\tWhat you have now\n\n"
         + "\tspt membercategory list\n\t\tWhat you can add\n\n"
-        + "\tspt membercategory [number | names]\n\t\tEx: spt membercategory 1026\n\t\tEx: spt membercategory unheard+uniqueid";
+        + "\tspt membercategory [number | names]\n\t\tEx: spt membercategory 1026\n\t\tEx: spt membercategory unheard+uniqueid\n\t\tEx: spt membercategory unheard+uniqueid+2048";
 
     public async ValueTask<string> PerformAction(UserDialogInfo commandHandler, MongoId sessionId, SendMessageRequest request)
     {
@@ -47,22 +52,31 @@ public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveS
         }
         else if (args == "list")
         {
-            reply = "You can add:\n" + string.Join("\n", Enum.GetValues<MemberCategory>().Where(c => (c & ~Allowed) == 0).Select(c => $"{(int)c} = {c}"));
+            reply = "You can add:\n" + string.Join("\n", Enum.GetValues<MemberCategory>().Where(c => (c & ~Allowed) == 0).Select(c => $"{(int)c} = {c}"))
+                + "\n2048, 4096, 8192, ... = your own icons from icons.json";
         }
-        else if (!Enum.TryParse<MemberCategory>(args.Replace(" ", "").Replace('+', ','), true, out var value) || (value & ~Allowed) != 0)
+        else if (!TryParse(args, out var value) || (value & ~Allowed) != 0)
         {
             reply = "That can't be set. Type 'spt membercategory list' to see what you can add.";
         }
         else
         {
+            var previous = info.MemberCategory ?? MemberCategory.Default;
             info.MemberCategory = value;
 
-            // The shown icon has to be one you have: Unheard first, then Edge of Darkness
+            // Show a custom icon you just added; otherwise the shown icon has to be one you
+            // have: Unheard first, then Edge of Darkness
+            var added = value & ~previous & Custom;
             var selected = info.SelectedMemberCategory ?? MemberCategory.Default;
-            if ((value & selected) != selected)
+            if (added != 0)
+            {
+                info.SelectedMemberCategory = LowestFlag(added);
+            }
+            else if ((value & selected) != selected)
             {
                 info.SelectedMemberCategory =
-                    value.HasFlag(MemberCategory.Unheard) ? MemberCategory.Unheard
+                    (value & Custom) != 0 ? LowestFlag(value & Custom)
+                    : value.HasFlag(MemberCategory.Unheard) ? MemberCategory.Unheard
                     : value.HasFlag(MemberCategory.UniqueId) ? MemberCategory.UniqueId
                     : MemberCategory.Default;
             }
@@ -75,9 +89,35 @@ public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveS
         return request.DialogId;
     }
 
+    // "unheard+uniqueid+2048": names and numbers, joined with + or spaces
+    private static bool TryParse(string args, out MemberCategory value)
+    {
+        value = MemberCategory.Default;
+        foreach (var part in args.Split(['+', ',', ' '], StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (int.TryParse(part, out var number))
+            {
+                value |= (MemberCategory)number;
+            }
+            else if (Enum.TryParse<MemberCategory>(part, true, out var named))
+            {
+                value |= named;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static MemberCategory LowestFlag(MemberCategory value) => (MemberCategory)((int)value & -(int)value);
+
     private static string Describe(MemberCategory value)
     {
-        var names = Enum.GetValues<MemberCategory>().Where(c => c != MemberCategory.Default && value.HasFlag(c));
+        var names = Enum.GetValues<MemberCategory>().Where(c => c != MemberCategory.Default && value.HasFlag(c)).Select(c => c.ToString())
+            .Concat(Enumerable.Range(11, 20).Select(bit => 1 << bit).Where(bit => ((int)value & bit) != 0).Select(bit => $"Custom {bit}"));
         return $"{(int)value} ({(value == MemberCategory.Default ? "Default" : string.Join(" + ", names))})";
     }
 }
