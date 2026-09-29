@@ -18,14 +18,14 @@
   </PropertyGroup>
 
   <!--
-      dotnet build -c Release -p:SPTPath="H:\SPT4.1.X" [-p:DeployToSPT=true]
+      dotnet build -c Release -p:SPTPath="C:\SPT" [-p:DeployToSPT=true]
 
     Compiled against the Assembly-CSharp in Managed, so the install must have been launched
     at least once: the SPT Launcher patches that file in place on first start, and only the
     patched copy has the names this plugin uses. An unpatched copy is ~15.99 MB.
   -->
   <Target Name="ValidateSPTPath" BeforeTargets="BeforeBuild">
-    <Error Condition="'$(SPTPath)' == ''" Text="SPTPath is not set. e.g. -p:SPTPath=H:\SPT4.1.X" />
+    <Error Condition="'$(SPTPath)' == ''" Text="SPTPath is not set. e.g. -p:SPTPath=C:\SPT" />
     <Error Condition="!Exists('$(BepInExCore)\BepInEx.dll')" Text="SPTPath ('$(SPTPath)') is not an SPT install root: no BepInEx\core\BepInEx.dll." />
     <Error Condition="!Exists('$(GameManaged)\Assembly-CSharp.dll')" Text="No Assembly-CSharp.dll under '$(GameManaged)'." />
   </Target>

@@ -1,5 +1,15 @@
 # ChangeIcons
 
+> **This fork (EditionCustomizer)** builds on [Evgencheg/Tarkov-Change-Icons](https://github.com/Evgencheg/Tarkov-Change-Icons)
+> and adds custom icons, multi-color nicknames and a desktop editor. See
+> [Custom icons](#custom-icons-this-branch) below. The original server command is unchanged
+> apart from accepting the new custom flags.
+>
+> **Status:** everything builds, and the editor was tested against a copy of an SPT 4.1
+> install: reading the game's icons, saving `icons.json`, and writing a profile. The client
+> plugin has **not been run in game yet**. The first things to check there are the multi-color
+> nicknames (`NameColorizer`) and the live reload of `icons.json`.
+
 Adds icons to your account: Sherpa, Emissary, Developer, Unheard or Edge of Darkness.
 
 I saw many people on the SPT Discord server asking how to get these icons, so I created a mod that allows you to do so with a single chat message.
@@ -40,7 +50,7 @@ Limit: the settings dropdown draws its small icon from a fixed sprite sheet, so 
 shows as its name only, and a replaced icon keeps the game's original small picture.
 
 ```
-dotnet build src/ChangeIcons.Client/ChangeIcons.Client.csproj -c Release -p:SPTPath="H:\SPT4.1.X" -p:DeployToSPT=true
+dotnet build src/ChangeIcons.Client/ChangeIcons.Client.csproj -c Release -p:SPTPath="C:\SPT" -p:DeployToSPT=true
 dotnet publish src/ChangeIcons.Editor/ChangeIcons.Editor.csproj -c Release -o dist/editor
 python scripts/make_icons.py
 ```
