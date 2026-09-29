@@ -90,28 +90,21 @@ public partial class MainWindow
 
     private void LoadBots()
     {
+        // Without a "bots" section the plugin already runs these defaults
         _bots = _file.Bots ?? DefaultBots();
         _namePool = BotNames.Load(_sptPath);
         ShowBots();
         Shuffle();
-
-        // Defaults the plugin hasn't been told about yet: SAVE writes them
-        if (_file.Bots == null)
-        {
-            MarkDirty();
-            SetStatus("PMC bot looks are new: press SAVE to turn them on");
-        }
     }
 
-    /// <summary>Everything on: every mode, preset, library and member icon.</summary>
+    /// <summary>What the plugin runs when icons.json has no "bots" section (BotDefaults).</summary>
     private BotsConfig DefaultBots() => new()
     {
         Enabled = true,
-        Icons = Pngs("icons/library")
-            .Concat(Categories.Grantable.Select(v => BotLookGenerator.MemberPrefix + Categories.EnumName(v)))
-            .OrderBy(e => e, StringComparer.Ordinal)
-            .ToList(),
-        Palettes = Presets.Select(p => p.Colors.ToList()).ToList(),
+        Icons = [.. BotDefaults.Icons(Pngs("icons/library"))],
+        Palettes = BotDefaults.Presets.Select(p => p.Colors.ToList()).ToList(),
+        AnimateChance = BotDefaults.AnimateChance,
+        MaxSpeed = BotDefaults.MaxSpeed,
     };
 
     private void ShowBots()

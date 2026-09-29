@@ -33,6 +33,79 @@ namespace ChangeIcons.Shared
         public double MaxSpeed = 1.0;
     }
 
+    public sealed class Preset
+    {
+        public string Name;
+        public string[] Colors;
+
+        public Preset(string name, params string[] colors)
+        {
+            Name = name;
+            Colors = colors;
+        }
+    }
+
+    /// <summary>
+    /// What PMC bots get when icons.json has no "bots" section: every library and member icon,
+    /// every preset, every way of coloring. The editor starts from the same, so its preview holds.
+    /// </summary>
+    public static class BotDefaults
+    {
+        public static readonly Preset[] Presets =
+        {
+            new Preset("Rainbow", "#FF4D4D", "#FF9F1C", "#FFE14D", "#5BE36B", "#3DB9FF", "#8B5CFF", "#FF5FCB"),
+            new Preset("Fire", "#FFE27A", "#FF9A2E", "#FF4B1F", "#B3120E"),
+            new Preset("Ice", "#FFFFFF", "#B8F1FF", "#5CC8FF", "#2E7BFF"),
+            new Preset("Toxic", "#F2FF6B", "#8CE83A", "#2BAF4A", "#0F7A3A"),
+            new Preset("Gold", "#FFF4C2", "#F2C94C", "#C8912A", "#8C5A12"),
+            new Preset("Blood", "#FF6B6B", "#D62828", "#7A0C0C"),
+            new Preset("Neon", "#FF2BD6", "#8B3DFF", "#2BE3FF"),
+            new Preset("Sunset", "#FFC46B", "#FF6F61", "#C94FD8", "#5B3FD1"),
+            new Preset("Unheard", "#7FF3FF", "#55D0E6", "#2C7FE0"),
+            new Preset("Tarkov", "#DCD7CA", "#C9B77F", "#8C7B55"),
+            new Preset("Ocean", "#00E0C6", "#0098D8", "#1D4ED8"),
+            new Preset("Candy", "#FF9BD2", "#FFFFFF", "#9BD8FF"),
+        };
+
+        /// <summary>The member icons that are safe on anyone (no trader or system ones).</summary>
+        public static readonly string[] MemberIcons =
+        {
+            "member:Developer", "member:UniqueId", "member:Sherpa", "member:Emissary", "member:Unheard",
+        };
+
+        public const int AnimateChance = 30;
+        public const double MaxSpeed = 1.0;
+
+        /// <summary>
+        /// The icon pool: <paramref name="libraryIcons"/> ("icons/library/skull.png" ...) plus the
+        /// member icons, in ordinal order so plugin and editor pick the same one for a name.
+        /// </summary>
+        public static string[] Icons(IEnumerable<string> libraryIcons)
+        {
+            var all = new List<string>(libraryIcons);
+            all.AddRange(MemberIcons);
+            all.Sort(StringComparer.Ordinal);
+            return all.ToArray();
+        }
+
+        public static BotRules Rules(IEnumerable<string> libraryIcons)
+        {
+            var palettes = new string[Presets.Length][];
+            for (var i = 0; i < Presets.Length; i++)
+            {
+                palettes[i] = Presets[i].Colors;
+            }
+
+            return new BotRules
+            {
+                Icons = Icons(libraryIcons),
+                Palettes = palettes,
+                AnimateChance = AnimateChance,
+                MaxSpeed = MaxSpeed,
+            };
+        }
+    }
+
     public sealed class BotLook
     {
         public string[] Colors;

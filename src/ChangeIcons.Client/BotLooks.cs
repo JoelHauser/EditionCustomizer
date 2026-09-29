@@ -27,10 +27,20 @@ public static class BotLooks
 
     public static void Configure(BotConfig config)
     {
-        if (config is not { Enabled: true })
+        _names = new(StringComparer.OrdinalIgnoreCase);
+
+        // No "bots" section (a fresh install, or icons.json never saved): on, with the defaults
+        if (config == null)
+        {
+            _rules = BotDefaults.Rules(LibraryIcons());
+            Plugin.Log.LogInfo($"PMC bot looks on with the defaults: {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
+            return;
+        }
+
+        if (!config.Enabled)
         {
             _rules = null;
-            _names = new(StringComparer.OrdinalIgnoreCase);
+            Plugin.Log.LogInfo("PMC bot looks are off in icons.json");
             return;
         }
 
@@ -49,6 +59,15 @@ public static class BotLooks
         };
         _names = new Dictionary<string, string>(config.Names ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
         Plugin.Log.LogInfo($"PMC bot looks on: {_rules.Share}% of PMCs, {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets, {_names.Count} named bots");
+    }
+
+    // icons/library/*.png as the plugin refers to them
+    private static IEnumerable<string> LibraryIcons()
+    {
+        var folder = System.IO.Path.Combine(Plugin.Folder, "icons", "library");
+        return System.IO.Directory.Exists(folder)
+            ? System.IO.Directory.GetFiles(folder, "*.png").Select(f => "icons/library/" + System.IO.Path.GetFileName(f))
+            : Enumerable.Empty<string>();
     }
 
     public static bool IsPmcBot(WildSpawnType role) => role is WildSpawnType.pmcBEAR or WildSpawnType.pmcUSEC;

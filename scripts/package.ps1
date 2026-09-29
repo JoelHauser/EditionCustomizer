@@ -42,7 +42,9 @@ function Invoke-Step([string] $title, [scriptblock] $step) {
 
 Invoke-Step "Server mod" { & $dotnet build "$root\src\ChangeIcons\ChangeIcons.csproj" -c Release -v q -nologo }
 Invoke-Step "Client plugin" { & $dotnet build "$root\src\ChangeIcons.Client\ChangeIcons.Client.csproj" -c Release -v q -nologo "-p:SPTPath=$SPTPath" }
-$editorOut = Join-Path $root "dist\editor"
+# A folder of its own, emptied each run, so an editor someone has open elsewhere can't block it
+$editorOut = Join-Path $root "dist\build\editor"
+Remove-Item $editorOut -Recurse -Force -ErrorAction SilentlyContinue
 Invoke-Step "Editor" { & $dotnet publish "$root\src\ChangeIcons.Editor\ChangeIcons.Editor.csproj" -c Release -v q -nologo -o $editorOut }
 
 # The layout of an SPT install

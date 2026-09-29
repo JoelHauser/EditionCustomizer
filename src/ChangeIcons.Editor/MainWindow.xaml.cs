@@ -15,21 +15,9 @@ namespace ChangeIcons.Editor;
 
 public partial class MainWindow : Window
 {
+    // Shared with the plugin, whose bot defaults use them
     private static readonly (string Name, string[] Colors)[] Presets =
-    [
-        ("Rainbow", ["#FF4D4D", "#FF9F1C", "#FFE14D", "#5BE36B", "#3DB9FF", "#8B5CFF", "#FF5FCB"]),
-        ("Fire", ["#FFE27A", "#FF9A2E", "#FF4B1F", "#B3120E"]),
-        ("Ice", ["#FFFFFF", "#B8F1FF", "#5CC8FF", "#2E7BFF"]),
-        ("Toxic", ["#F2FF6B", "#8CE83A", "#2BAF4A", "#0F7A3A"]),
-        ("Gold", ["#FFF4C2", "#F2C94C", "#C8912A", "#8C5A12"]),
-        ("Blood", ["#FF6B6B", "#D62828", "#7A0C0C"]),
-        ("Neon", ["#FF2BD6", "#8B3DFF", "#2BE3FF"]),
-        ("Sunset", ["#FFC46B", "#FF6F61", "#C94FD8", "#5B3FD1"]),
-        ("Unheard", ["#7FF3FF", "#55D0E6", "#2C7FE0"]),
-        ("Tarkov", ["#DCD7CA", "#C9B77F", "#8C7B55"]),
-        ("Ocean", ["#00E0C6", "#0098D8", "#1D4ED8"]),
-        ("Candy", ["#FF9BD2", "#FFFFFF", "#9BD8FF"]),
-    ];
+        Shared.BotDefaults.Presets.Select(p => (p.Name, p.Colors)).ToArray();
 
     private const string StandardGray = "#C3CDD3";
 
