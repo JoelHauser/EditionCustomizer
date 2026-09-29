@@ -56,6 +56,10 @@ it works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns
 [Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews real
 names from whichever of them is installed.
 
+With MoxoPixel's Menu Overhaul installed, its main-screen name gets your
+icon and colors too (it hides the game's own name row and draws its own). That happens only when the
+icon you show is one you've changed; otherwise its accent color stays.
+
 The server command takes the new flags too: `spt membercategory unheard+uniqueid+2048`.
 
 Limit: the settings dropdown draws its small icon from a fixed sprite sheet, so there a new icon

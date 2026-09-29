@@ -7,7 +7,9 @@ using UnityEngine;
 
 namespace ChangeIcons.Client;
 
-[BepInPlugin("com.mybutthasarash.editioncustomizer", "ChangeIcons.Client", "1.2.0")]
+[BepInPlugin("com.mybutthasarash.editioncustomizer", "ChangeIcons.Client", "1.3.0")]
+// Loads after MoxoPixel's Menu Overhaul when that's installed, so its name label can be found
+[BepInDependency("com.moxopixel.menuoverhaul", BepInDependency.DependencyFlags.SoftDependency)]
 public class Plugin : BaseUnityPlugin
 {
     public static ManualLogSource Log;
@@ -29,7 +31,9 @@ public class Plugin : BaseUnityPlugin
 
         Settings = LoadConfig() ?? new IconConfig { DumpOriginalIcons = false };
         BotLooks.Configure(Settings.Bots);
-        new Harmony("com.mybutthasarash.editioncustomizer").PatchAll(typeof(Plugin).Assembly);
+        var harmony = new Harmony("com.mybutthasarash.editioncustomizer");
+        harmony.PatchAll(typeof(Plugin).Assembly);
+        MenuOverhaulCompat.TryPatch(harmony);
 
         // The editor saves icons.json and icons\*.png; pick those up without a restart
         _watcher = new FileSystemWatcher(Folder) { IncludeSubdirectories = true, NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size };

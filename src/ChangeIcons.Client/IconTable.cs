@@ -27,6 +27,11 @@ public static class IconTable
 
     public static NameStyle StyleFor(EMemberCategory category) => Styles.TryGetValue(category, out var style) ? style : null;
 
+    // Categories icons.json changes at all (name, colors or picture)
+    private static readonly HashSet<EMemberCategory> Customized = new();
+
+    public static bool IsCustomized(EMemberCategory category) => Customized.Contains(category);
+
     private static readonly Dictionary<string, Sprite> LoadedSprites = new();
     private static bool _dumped;
 
@@ -60,6 +65,7 @@ public static class IconTable
         LoadedSprites.Clear();
         Named.Clear();
         Styles.Clear();
+        Customized.Clear();
 
         foreach (var pair in Originals)
         {
@@ -107,6 +113,7 @@ public static class IconTable
                     rows.Add(row);
                 }
 
+                Customized.Add(category);
                 if (!string.IsNullOrEmpty(entry.Name))
                 {
                     row.Name = entry.Name;
