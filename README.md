@@ -38,7 +38,7 @@ nicknames in as many colors as you like.
   changes the game's icon table: recolor or replace the existing icons, or add new ones on free
   flags (2048, 4096, ...). Nicknames can be one color, a gradient across the name, or a color per
   letter, still or moving. It reloads `icons.json` while the game runs; reopen a screen to see it.
-- **ChangeIcons Editor.exe** (same folder) edits all of that with a live preview. It reads every
+- **ChangeIcons Editor.exe** (in the SPT folder, next to `EscapeFromTarkov.exe`) edits all of that with a live preview. It reads every
   icon straight out of the game's `resources.assets` into `game-icons/` (about 1,100, plus the
   member icon table with the game's own colors), comes with a library of 31 extra icons
   (`icons/library`, drawn by `scripts/make_icons.py`), imports and recolors images, and sets which
@@ -78,13 +78,13 @@ Unpack `EditionCustomizer-<version>.zip` into your SPT folder (the one with
 `EscapeFromTarkov.exe`). You should get:
 
 ```
+ChangeIcons Editor.exe                                       the editor
 SPT_Runtime/user/mods/ChangeIcons/ChangeIcons.dll            server mod (the chat command)
 BepInEx/plugins/ChangeIcons/ChangeIcons.Client.dll           client plugin (icons, colors, bots)
-BepInEx/plugins/ChangeIcons/ChangeIcons Editor.exe           the editor
 BepInEx/plugins/ChangeIcons/icons/library/*.png              31 extra icons
 ```
 
-Then run **ChangeIcons Editor.exe** from that folder. The first time it reads the game's icons
+Then run **ChangeIcons Editor.exe** from your SPT folder. The first time it reads the game's icons
 (a second or two), then everything is set up in the editor; press SAVE to write your
 `icons.json`. The zip doesn't include an `icons.json`, so updating never overwrites yours.
 
@@ -99,7 +99,7 @@ GitHub Actions.
 
 ## Uninstallation
 
-Delete `SPT_Runtime/user/mods/ChangeIcons` and `BepInEx/plugins/ChangeIcons`.
+Delete `SPT_Runtime/user/mods/ChangeIcons`, `BepInEx/plugins/ChangeIcons` and `ChangeIcons Editor.exe`.
 
 Your icons stay on the account. To reset them, send `spt membercategory default` (or untick them
 in the editor's PROFILE page) before deleting the mod.

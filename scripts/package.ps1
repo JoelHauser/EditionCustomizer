@@ -57,7 +57,9 @@ $library = New-Item -ItemType Directory -Force (Join-Path $plugin "icons\library
 Copy-Item "$root\src\ChangeIcons\bin\Release\net10.0\ChangeIcons.dll" $server
 Copy-Item "$root\LICENSE" $server
 Copy-Item "$root\src\ChangeIcons.Client\bin\Release\ChangeIcons.Client.dll" $plugin
-Copy-Item (Join-Path $editorOut "ChangeIcons.Editor.exe") (Join-Path $plugin "ChangeIcons Editor.exe")
+# The editor goes in the SPT folder itself, next to EscapeFromTarkov.exe, where people find it.
+# It finds its SPT install by looking at the folder it's in and the ones above.
+Copy-Item (Join-Path $editorOut "ChangeIcons.Editor.exe") (Join-Path $staging "ChangeIcons Editor.exe")
 Copy-Item "$root\src\ChangeIcons.Client\icons\library\*.png" $library
 Copy-Item "$root\LICENSE" $plugin
 

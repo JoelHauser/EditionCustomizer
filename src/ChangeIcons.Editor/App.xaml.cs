@@ -86,8 +86,8 @@ public partial class App : Application
     private static bool IsSpt(string path) =>
         File.Exists(Path.Combine(path, "EscapeFromTarkov.exe")) && Directory.Exists(Path.Combine(path, "BepInEx"));
 
-    // A path argument; else the SPT install the exe sits in (it lives in BepInEx\plugins\ChangeIcons);
-    // else the folder picked last time
+    // A path argument; else the SPT install the exe sits in (the zip puts it in the SPT folder
+    // itself; older versions put it in BepInEx\plugins\ChangeIcons); else the folder picked last time
     private static string? FindSpt(string[] args)
     {
         if (args.Length > 0 && IsSpt(args[0]))
