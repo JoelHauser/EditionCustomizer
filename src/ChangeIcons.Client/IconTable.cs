@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EFT.UI;
+using Newtonsoft.Json;
 using UnityEngine;
 using IconsData = EFT.UI.ChatSpecialIconSettings.IconsData;
 
@@ -14,8 +15,9 @@ namespace ChangeIcons.Client;
 /// </summary>
 public static class IconTable
 {
-    // Each table the game hands us, once. UI prefabs can hold their own copy of the asset.
-    private static readonly HashSet<ChatSpecialIconSettings> Applied = new();
+    // Each table the game hands us, with the game's own rows so a reload can start over from
+    // them. UI prefabs can hold their own copy of the asset.
+    private static readonly Dictionary<ChatSpecialIconSettings, (IconsData[] Rows, EMemberCategory[] Priority)> Originals = new();
 
     // Categories whose dropdown label should be our name rather than the game's translation
     public static readonly HashSet<EMemberCategory> Named = new();
@@ -27,21 +29,52 @@ public static class IconTable
 
     public static void Apply(ChatSpecialIconSettings settings)
     {
-        if (settings == null || !Applied.Add(settings))
+        if (settings == null || Originals.ContainsKey(settings))
         {
             return;
         }
 
-        try
-        {
-            LogTable(settings, "Game icon table");
+        Originals[settings] = (settings.IconsSettings.Select(Copy).ToArray(), settings.Priority.ToArray());
+        LogTable(settings, "Game icon table");
 
-            if (Plugin.Settings.DumpOriginalIcons && !_dumped)
+        if (Plugin.Settings.DumpOriginalIcons && !_dumped)
+        {
+            _dumped = true;
+            DumpOriginals(settings);
+        }
+
+        ApplyConfig(settings);
+    }
+
+    /// <summary>
+    /// icons.json changed: put every table back to the game's rows and apply it again. Screens
+    /// already open keep what they drew until they are shown again.
+    /// </summary>
+    public static void Reload()
+    {
+        LoadedSprites.Clear();
+        Named.Clear();
+
+        foreach (var pair in Originals)
+        {
+            if (pair.Key == null)
             {
-                _dumped = true;
-                DumpOriginals(settings);
+                continue;
             }
 
+            pair.Key.IconsSettings = pair.Value.Rows.Select(Copy).ToArray();
+            pair.Key.Priority = pair.Value.Priority.ToArray();
+            ApplyConfig(pair.Key);
+        }
+    }
+
+    private static IconsData Copy(IconsData row) =>
+        new() { Name = row.Name, Category = row.Category, IconSprite = row.IconSprite, IconColor = row.IconColor };
+
+    private static void ApplyConfig(ChatSpecialIconSettings settings)
+    {
+        try
+        {
             var rows = settings.IconsSettings.ToList();
             var priority = settings.Priority.ToList();
             var fallbackSprite = rows.FirstOrDefault(r => r.Category == EMemberCategory.Default)?.IconSprite;
@@ -94,7 +127,10 @@ public static class IconTable
                 }
                 else if (!string.IsNullOrEmpty(entry.IconFrom))
                 {
-                    var source = TryParseCategory(entry.IconFrom, out var from) ? rows.FirstOrDefault(r => r.Category == from) : null;
+                    // From the game's rows, so a borrowed icon is never one icons.json replaced
+                    var source = TryParseCategory(entry.IconFrom, out var from)
+                        ? Originals[settings].Rows.FirstOrDefault(r => r.Category == from)
+                        : null;
                     if (source?.IconSprite != null)
                     {
                         row.IconSprite = source.IconSprite;
@@ -182,6 +218,10 @@ public static class IconTable
         return sprite;
     }
 
+    /// <summary>
+    /// originals\: each game icon as a PNG plus table.json with their names and colors, for the
+    /// editor and as templates.
+    /// </summary>
     private static void DumpOriginals(ChatSpecialIconSettings settings)
     {
         var folder = Path.Combine(Plugin.Folder, "originals");
@@ -217,6 +257,24 @@ public static class IconTable
             {
                 Plugin.Log.LogWarning($"Couldn't save the {row.Category} icon: {e.Message}");
             }
+        }
+
+        try
+        {
+            var table = settings.IconsSettings.Select(r => new
+            {
+                category = r.Category.ToString(),
+                value = (int)r.Category,
+                name = r.Name,
+                color = "#" + ColorUtility.ToHtmlStringRGBA(r.IconColor),
+                size = r.IconSprite == null ? 0 : (int)r.IconSprite.rect.width,
+                shownInSettings = settings.Priority.Contains(r.Category),
+            });
+            File.WriteAllText(Path.Combine(folder, "table.json"), JsonConvert.SerializeObject(table, Formatting.Indented));
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.LogWarning($"Couldn't save table.json: {e.Message}");
         }
 
         Plugin.Log.LogInfo($"Saved the game's icons to {folder}");

@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="src/ChangeIcons/ChangeIcons.csproj" />
+  <Project Path="src/ChangeIcons.Client/ChangeIcons.Client.csproj" />
+  <Project Path="src/ChangeIcons.Editor/ChangeIcons.Editor.csproj" />
 </Solution>
