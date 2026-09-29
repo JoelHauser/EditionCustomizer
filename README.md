@@ -73,15 +73,35 @@ once. The editor reads the game's files with [AssetsTools.NET](https://github.co
 
 ## Installation
 
-Unpack the [release archive](https://github.com/Evgencheg/Tarkov-Change-Icons/releases/latest) into your SPT game folder.
+Unpack `EditionCustomizer-<version>.zip` into your SPT folder (the one with
+`EscapeFromTarkov.exe`). You should get:
 
-You should get `SPT_Runtime/user/mods/ChangeIcons/ChangeIcons.dll`.
+```
+SPT_Runtime/user/mods/ChangeIcons/ChangeIcons.dll            server mod (the chat command)
+BepInEx/plugins/ChangeIcons/ChangeIcons.Client.dll           client plugin (icons, colors, bots)
+BepInEx/plugins/ChangeIcons/ChangeIcons Editor.exe           the editor
+BepInEx/plugins/ChangeIcons/icons/library/*.png              31 extra icons
+```
+
+Then run **ChangeIcons Editor.exe** from that folder. The first time it reads the game's icons
+(a second or two), then everything is set up in the editor; press SAVE to write your
+`icons.json`. The zip doesn't include an `icons.json`, so updating never overwrites yours.
+
+The editor needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0);
+if it's missing, Windows offers the download when you start the editor. The mods themselves
+don't need it.
+
+To make a release zip: `.\scripts\package.ps1 -SPTPath C:\SPT -Version 1.0.0` (writes
+`dist\EditionCustomizer-1.0.0.zip`). It needs an SPT install that has been launched once, because
+the client plugin compiles against the game's patched `Assembly-CSharp`, so it can't run on
+GitHub Actions.
 
 ## Uninstallation
 
-Delete `SPT_Runtime/user/mods/ChangeIcons`.
+Delete `SPT_Runtime/user/mods/ChangeIcons` and `BepInEx/plugins/ChangeIcons`.
 
-Your icons stay on the account. To reset them, send `spt membercategory default` before deleting the mod.
+Your icons stay on the account. To reset them, send `spt membercategory default` (or untick them
+in the editor's PROFILE page) before deleting the mod.
 
 ## Building
 
