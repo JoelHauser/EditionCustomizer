@@ -75,7 +75,7 @@ public static class ChatSpecialIconShowPatch
 public static class PlayerNamePanelPatch
 {
     // Someone else's panel (the death screen's killer) is drawn with the game's own icons
-    public static void Prefix(string nickname) => LocalPlayer.Enter(!LocalPlayer.IsYou(nickname));
+    public static void Prefix(string nickname, out bool __state) => __state = LocalPlayer.Enter(!LocalPlayer.IsYou(nickname));
 
     public static void Postfix(PlayerNamePanel __instance, bool showDetails, EMemberCategory category, string nickname)
     {
@@ -91,7 +91,7 @@ public static class PlayerNamePanelPatch
         NameColorizer.Attach(__instance._description, row?.Category, nickname);
     }
 
-    public static System.Exception Finalizer(System.Exception __exception) => LocalPlayer.Leave(__exception);
+    public static System.Exception Finalizer(System.Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>
