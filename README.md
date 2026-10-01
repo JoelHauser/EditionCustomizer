@@ -38,6 +38,8 @@ nicknames in as many colors as you like.
   changes the game's icon table: recolor or replace the existing icons, or add new ones on free
   flags (2048, 4096, ...). Nicknames can be one color, a gradient across the name, or a color per
   letter, still or moving. It reloads `icons.json` while the game runs; reopen a screen to see it.
+  A changed game icon (Standard, Edge of Darkness, ...) is your look only: traders, system
+  messages, chat bots, flea sellers and other players keep the game's own.
 - **ChangeIcons Editor.exe** (in the SPT folder, next to `EscapeFromTarkov.exe`) edits all of that with a live preview. It reads every
   icon straight out of the game's `resources.assets` into `game-icons/` (about 1,100, plus the
   member icon table with the game's own colors), comes with a library of 31 extra icons
@@ -49,8 +51,9 @@ nicknames in as many colors as you like.
 color, a gradient or a color per letter, from the presets or made-up colors, optionally moving.
 A bot's look is worked out from its name (`src/Shared/BotLooks.cs`, compiled into both the plugin
 and the editor), so the same name looks the same every raid and nothing is stored on bots or
-profiles. It shows on the death screen ("killed by": icon and colors) and in the kill list after a
-raid (colors). It is on out of the box (every library and member icon, every preset); the
+profiles. It shows on the death screen ("killed by": icon and colors), in the kill list after a
+raid (colors), and on flea market sellers (icon and colors), whose names come from the same PMC
+name lists -- so a seller looks like the PMC of the same name. It is on out of the box (every library and member icon, every preset); the
 editor's BOTS page narrows it down or turns it off. Because only the final name matters,
 it works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns-reloaded) and
 [Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews real

@@ -70,3 +70,35 @@ public static class ChatMemberScopePatch
 
     public static Exception Finalizer(Exception __exception) => LocalPlayer.Leave(__exception);
 }
+
+/// <summary>
+/// Flea market sellers. Not your offers: the game's own look, and for a player-style seller (not
+/// a trader) its PMC bot look on top -- the same name-based look a PMC of that name has in raid,
+/// so the market's sellers vary instead of all wearing your changed Standard icon.
+/// </summary>
+[HarmonyPatch(typeof(EFT.UI.Ragfair.MerchantInfoView), nameof(EFT.UI.Ragfair.MerchantInfoView.Show),
+    typeof(EFT.UI.Ragfair.RagFair), typeof(EFT.UI.Ragfair.Offer.Merchant), typeof(bool))]
+public static class FleaSellerPatch
+{
+    public static void Prefix(bool isMyOffer) => LocalPlayer.Enter(!isMyOffer);
+
+    public static void Postfix(EFT.UI.Ragfair.MerchantInfoView __instance, EFT.UI.Ragfair.Offer.Merchant merchant, bool isMyOffer)
+    {
+        if (isMyOffer || merchant == null)
+        {
+            return;
+        }
+
+        // Rows are reused as the list scrolls: always set or clear
+        var look = (merchant.MemberType & EMemberCategory.Trader) == 0 ? BotLooks.For(merchant.Nickname) : null;
+        NameColorizer.AttachStyle(__instance._merchantName, look?.Style, merchant.CorrectedNickname);
+
+        var image = __instance._specialIcon != null ? __instance._specialIcon._icon : null;
+        if (look?.Icon != null && image != null)
+        {
+            image.sprite = look.Icon;
+        }
+    }
+
+    public static Exception Finalizer(Exception __exception) => LocalPlayer.Leave(__exception);
+}
