@@ -32,6 +32,46 @@ public static class IconTable
 
     public static bool IsCustomized(EMemberCategory category) => Customized.Contains(category);
 
+    /// <summary>
+    /// Set while the game draws someone who isn't you: a trader, a system sender, a chat bot, a
+    /// scav on the death screen. A changed game icon (Standard, EoD, ...) is your look, not
+    /// everyone's who shares the category, so lookups made meanwhile get the game's own rows.
+    /// </summary>
+    public static bool OthersScope;
+
+    /// <summary>
+    /// The game's own answer for a category, from its original rows: the same search
+    /// GetDataByMemberCategory does, over the table as it was before icons.json.
+    /// </summary>
+    public static IconsData OriginalFor(ChatSpecialIconSettings settings, EMemberCategory category)
+    {
+        Apply(settings);
+        if (!Originals.TryGetValue(settings, out var original))
+        {
+            return null;
+        }
+
+        // Of the flags the category has, the one earliest in Priority; Default (0) always counts
+        var target = category;
+        var best = -1;
+        foreach (EMemberCategory flag in Enum.GetValues(typeof(EMemberCategory)))
+        {
+            if ((category & flag) != flag)
+            {
+                continue;
+            }
+
+            var index = Array.IndexOf(original.Priority, flag);
+            if (index >= 0 && (best < 0 || index < best))
+            {
+                best = index;
+                target = flag;
+            }
+        }
+
+        return original.Rows.FirstOrDefault(r => r.Category == target);
+    }
+
     private static readonly Dictionary<string, Sprite> LoadedSprites = new();
     private static bool _dumped;
 

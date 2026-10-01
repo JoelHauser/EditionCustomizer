@@ -19,6 +19,12 @@ public static class GetDataByMemberCategoryPatch
     {
         IconTable.Apply(__instance);
 
+        if (IconTable.OthersScope)
+        {
+            __result = IconTable.OriginalFor(__instance, category);
+            return false;
+        }
+
         foreach (var row in __instance.IconsSettings)
         {
             if (IconTable.IsCustom(row.Category) && (category & row.Category) == row.Category)
@@ -46,6 +52,12 @@ public static class ChatSpecialIconShowPatch
             return;
         }
 
+        if (IconTable.OthersScope)
+        {
+            NameColorizer.Attach(label, null);
+            return;
+        }
+
         // Show returns early without coloring when there's no icon image
         var row = __instance._icon != null && isNameColored
             ? EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(category)
@@ -62,12 +74,24 @@ public static class ChatSpecialIconShowPatch
 [HarmonyPatch(typeof(PlayerNamePanel), nameof(PlayerNamePanel.Set), typeof(bool), typeof(EMemberCategory), typeof(string), typeof(int), typeof(int))]
 public static class PlayerNamePanelPatch
 {
+    // Someone else's panel (the death screen's killer) is drawn with the game's own icons
+    public static void Prefix(string nickname) => LocalPlayer.Enter(!LocalPlayer.IsYou(nickname));
+
     public static void Postfix(PlayerNamePanel __instance, bool showDetails, EMemberCategory category, string nickname)
     {
+        if (IconTable.OthersScope)
+        {
+            NameColorizer.Attach(__instance._name, null);
+            NameColorizer.Attach(__instance._description, null);
+            return;
+        }
+
         var row = EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(showDetails ? category : EMemberCategory.Default);
         NameColorizer.Attach(__instance._name, row?.Category, nickname);
         NameColorizer.Attach(__instance._description, row?.Category, nickname);
     }
+
+    public static System.Exception Finalizer(System.Exception __exception) => LocalPlayer.Leave(__exception);
 }
 
 /// <summary>
@@ -130,18 +154,13 @@ public static class DeathScreenPatch
             return;
         }
 
+        // Anyone else was already put back to the game's own look by PlayerNamePanelPatch,
+        // which also clears the last raid's bot colors off this reused panel
         var look = BotLooks.IsPmcBot(aggressor.Role) ? BotLooks.For(aggressor.Name) : null;
         if (look != null)
         {
             BotLooks.ApplyTo(panel, look, panel._name != null ? panel._name.text : null);
-            return;
         }
-
-        // The panel is reused raid after raid: give the name back what its category gives it
-        // (one of your styled icons, or plain), not the last bot's colors
-        var shown = aggressor.Side != EPlayerSide.Savage ? aggressor.Category : EMemberCategory.Default;
-        var row = EFTHardSettings.Instance.ChatSpecialIconSettings.GetDataByMemberCategory(shown);
-        NameColorizer.Attach(panel._name, row?.Category, panel._name != null ? panel._name.text : null);
     }
 }
 
