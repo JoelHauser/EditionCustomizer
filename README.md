@@ -37,7 +37,8 @@ nicknames in as many colors as you like.
 - **ChangeIcons.Client** (BepInEx plugin, `BepInEx/plugins/ChangeIcons`) reads `icons.json` and
   changes the game's icon table: recolor or replace the existing icons, or add new ones on free
   flags (2048, 4096, ...). Nicknames can be one color, a gradient across the name, or a color per
-  letter, still or moving. It reloads `icons.json` while the game runs; reopen a screen to see it.
+  letter, still or moving -- scroll, pulse, wave or sparkle, either way round. It reloads
+  `icons.json` while the game runs; reopen a screen to see it.
   A changed game icon (Standard, Edge of Darkness, ...) is your look only: traders, system
   messages, chat bots, flea sellers and other players keep the game's own.
 - **ChangeIcons Editor.exe** (in the SPT folder, next to `EscapeFromTarkov.exe`) edits all of that with a live preview. It reads every
@@ -48,7 +49,9 @@ nicknames in as many colors as you like.
   closed, and backs it up to `backups/` first.
 
 **PMC bots** can get looks too: an icon from the library or the member icons, and a name in one
-color, a gradient or a color per letter, from the presets or made-up colors, optionally moving.
+color, a gradient or a color per letter, from 24 presets or made-up color schemes (neighbouring
+hues, opposites, triads, shades, pastels, neons), and about half of them moving in one of the four
+animations.
 A bot's look is worked out from its name (`src/Shared/BotLooks.cs`, compiled into both the plugin
 and the editor), so the same name looks the same every raid and nothing is stored on bots or
 profiles. It shows on the death screen ("killed by": icon and colors), in the kill list after a

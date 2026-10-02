@@ -53,6 +53,7 @@ public static class BotLooks
             RandomColors = config.RandomColors,
             AnimateChance = Mathf.Clamp(config.AnimateChance, 0, 100),
             MaxSpeed = config.MaxSpeed,
+            Motions = (config.Motions ?? new List<string>(Shared.Motions.All)).ToArray(),
         };
         Plugin.Log.LogInfo($"PMC bot looks on: {_rules.Share}% of PMCs, {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
     }
@@ -87,7 +88,7 @@ public static class BotLooks
             var colors = look.Colors.Select(c => ColorUtility.TryParseHtmlString(c, out var color) ? color : Color.white).ToArray();
             return new Look
             {
-                Style = NameStyle.Create(colors, look.Mode == "letters", (float)look.Speed),
+                Style = NameStyle.Create(colors, look.Mode == "letters", (float)look.Speed, look.Motion, look.Reverse),
                 Icon = IconFor(look.Icon),
             };
         }

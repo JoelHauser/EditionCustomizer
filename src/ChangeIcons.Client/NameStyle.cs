@@ -1,23 +1,34 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using ChangeIcons.Shared;
 using UnityEngine;
 
 namespace ChangeIcons.Client;
 
 /// <summary>
-/// Several colors in a nickname. The editor's preview uses the same formulas; keep them in step.
+/// The colors of a nickname, and how they move. The math is the shared NamePaint, the same code the
+/// editor's preview runs.
 /// </summary>
 public class NameStyle
 {
     public Color[] Colors;
-    public bool Letters;
-    public float Speed;
+    public NamePaint Paint;
 
-    /// <summary>Any number of colors; one gives a plain color (used for bots).</summary>
-    public static NameStyle Create(Color[] colors, bool letters, float speed) =>
-        new() { Colors = colors, Letters = letters, Speed = colors.Length > 1 ? Mathf.Max(0, speed) : 0 };
+    private readonly double[] _rgb = new double[3];
 
+    public bool Moving => Paint.Moving;
+
+    /// <summary>Any number of colors; one gives a plain color unless it waves or sparkles.</summary>
+    public static NameStyle Create(Color[] colors, bool letters, float speed, string motion = null, bool reverse = false) =>
+        new()
+        {
+            Colors = colors,
+            Paint = new NamePaint(colors.Select(c => new double[] { c.r, c.g, c.b }).ToArray(), letters, motion, speed, reverse),
+        };
+
+    /// <summary>An icons.json entry's multi-color name, or null for a plain one.</summary>
     public static NameStyle From(IconEntry entry)
     {
         if (entry.Colors == null || entry.Colors.Count < 2)
@@ -40,43 +51,15 @@ public class NameStyle
 
         return colors.Count < 2
             ? null
-            : new NameStyle
-            {
-                Colors = colors.ToArray(),
-                Letters = string.Equals(entry.ColorMode, "letters", StringComparison.OrdinalIgnoreCase),
-                Speed = Mathf.Max(0, entry.Animate),
-            };
+            : Create(colors.ToArray(), string.Equals(entry.ColorMode, "letters", StringComparison.OrdinalIgnoreCase),
+                Mathf.Max(0, entry.Animate), entry.Motion, entry.Reverse);
     }
 
-    /// <summary>
-    /// Gradient color at <paramref name="x"/> (0 = left edge of the name, 1 = right edge).
-    /// Moving, the colors wrap around so the last blends back into the first.
-    /// </summary>
-    public Color Gradient(float x, float time)
+    /// <summary>The color at x (0..1 across the name) on a visible letter, at a time in seconds.</summary>
+    public Color At(float x, int letter, float time)
     {
-        if (Speed <= 0)
-        {
-            return Sample(Mathf.Clamp01(x) * (Colors.Length - 1), wrap: false);
-        }
-
-        var t = Mathf.Repeat(x + time * Speed, 1f);
-        return Sample(t * Colors.Length, wrap: true);
-    }
-
-    public Color Letter(int index, float time)
-    {
-        var shift = Speed <= 0 ? 0 : Mathf.FloorToInt(time * Speed * 4f);
-        return Colors[((index + shift) % Colors.Length + Colors.Length) % Colors.Length];
-    }
-
-    private Color Sample(float position, bool wrap)
-    {
-        var i = Mathf.FloorToInt(position);
-        var f = position - i;
-        var a = Colors[Mathf.Clamp(i, 0, Colors.Length - 1)];
-        var next = i + 1;
-        var b = wrap ? Colors[next % Colors.Length] : Colors[Mathf.Clamp(next, 0, Colors.Length - 1)];
-        return Color.Lerp(a, b, f);
+        Paint.At(x, letter, time, _rgb);
+        return new Color((float)_rgb[0], (float)_rgb[1], (float)_rgb[2], 1f);
     }
 
     /// <summary>
@@ -90,17 +73,9 @@ public class NameStyle
             return text;
         }
 
+        var count = text.Count(ch => !char.IsWhiteSpace(ch));
         var builder = new StringBuilder();
         var visible = 0;
-        var count = 0;
-        foreach (var ch in text)
-        {
-            if (!char.IsWhiteSpace(ch))
-            {
-                count++;
-            }
-        }
-
         foreach (var ch in text)
         {
             if (char.IsWhiteSpace(ch))
@@ -109,7 +84,7 @@ public class NameStyle
                 continue;
             }
 
-            var color = Letters ? Letter(visible, 0) : Gradient(count <= 1 ? 0 : (visible + 0.5f) / count, 0);
+            var color = At(count <= 1 ? 0 : (visible + 0.5f) / count, visible, 0);
             builder.Append("<color=#").Append(ColorUtility.ToHtmlStringRGB(color)).Append('>').Append(ch).Append("</color>");
             visible++;
         }

@@ -66,6 +66,14 @@ public class IconEntry
     [JsonProperty("animate")]
     public float Animate;
 
+    /// <summary>"scroll" (default), "pulse", "wave" or "sparkle".</summary>
+    [JsonProperty("motion")]
+    public string Motion;
+
+    /// <summary>Run the motion the other way.</summary>
+    [JsonProperty("reverse")]
+    public bool Reverse;
+
     /// <summary>
     /// PNG path relative to the plugin folder.
     /// </summary>
@@ -110,8 +118,15 @@ public class BotConfig
     public bool RandomColors = true;
 
     [JsonProperty("animateChance")]
-    public int AnimateChance = 30;
+    public int AnimateChance = Shared.BotDefaults.AnimateChance;
 
     [JsonProperty("maxSpeed")]
     public double MaxSpeed = 1.0;
+
+    /// <summary>
+    /// Which motions bots may use ("scroll", "pulse", "wave", "sparkle"); missing means all. No
+    /// default list here: Newtonsoft adds to an existing list instead of replacing it.
+    /// </summary>
+    [JsonProperty("motions")]
+    public List<string> Motions;
 }

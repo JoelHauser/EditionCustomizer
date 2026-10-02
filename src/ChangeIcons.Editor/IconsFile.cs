@@ -40,6 +40,10 @@ public class EditableIcon
     public NameMode Mode = NameMode.Solid;
     public double Animate;
 
+    /// <summary>One of Shared.Motions; used when Animate is above 0.</summary>
+    public string Motion = Shared.Motions.Scroll;
+    public bool Reverse;
+
     public IconSource Source;
     public string? GameIcon;
     public string? File;
@@ -74,6 +78,8 @@ public class IconsFile
         [JsonPropertyName("colors")] public List<string>? Colors { get; set; }
         [JsonPropertyName("colorMode")] public string? ColorMode { get; set; }
         [JsonPropertyName("animate")] public double? Animate { get; set; }
+        [JsonPropertyName("motion")] public string? Motion { get; set; }
+        [JsonPropertyName("reverse")] public bool? Reverse { get; set; }
         [JsonPropertyName("icon")] public string? Icon { get; set; }
         [JsonPropertyName("iconFrom")] public string? IconFrom { get; set; }
         [JsonPropertyName("editor")] public EditorInfo? Editor { get; set; }
@@ -107,7 +113,12 @@ public class IconsFile
     public static EditableIcon ToEditable(Entry entry)
     {
         var value = Categories.Parse(entry.Category) ?? throw new FormatException($"\"{entry.Category}\" isn't a category");
-        var icon = new EditableIcon { Value = value, Name = entry.Name, Animate = entry.Animate ?? 0 };
+        var icon = new EditableIcon
+        {
+            Value = value, Name = entry.Name, Animate = entry.Animate ?? 0,
+            Motion = string.IsNullOrEmpty(entry.Motion) ? Shared.Motions.Scroll : entry.Motion,
+            Reverse = entry.Reverse ?? false,
+        };
 
         if (entry.Colors is { Count: > 1 })
         {
@@ -167,6 +178,8 @@ public class IconsFile
             entry.Colors = [.. icon.Colors];
             entry.ColorMode = icon.Mode == NameMode.Letters ? "letters" : "gradient";
             entry.Animate = icon.Animate > 0 ? Math.Round(icon.Animate, 2) : null;
+            entry.Motion = icon.Animate > 0 ? icon.Motion : null;
+            entry.Reverse = icon.Animate > 0 && icon.Reverse ? true : null;
         }
 
         if (bakedIcon != null)
@@ -258,8 +271,9 @@ public class BotsConfig
     [JsonPropertyName("modes")] public List<string> Modes { get; set; } = ["solid", "gradient", "letters"];
     [JsonPropertyName("palettes")] public List<List<string>> Palettes { get; set; } = [];
     [JsonPropertyName("randomColors")] public bool RandomColors { get; set; } = true;
-    [JsonPropertyName("animateChance")] public int AnimateChance { get; set; } = 30;
+    [JsonPropertyName("animateChance")] public int AnimateChance { get; set; } = Shared.BotDefaults.AnimateChance;
     [JsonPropertyName("maxSpeed")] public double MaxSpeed { get; set; } = 1.0;
+    [JsonPropertyName("motions")] public List<string> Motions { get; set; } = [.. Shared.Motions.All];
 
     public Shared.BotRules ToRules() => new()
     {
@@ -272,5 +286,6 @@ public class BotsConfig
         RandomColors = RandomColors,
         AnimateChance = Math.Clamp(AnimateChance, 0, 100),
         MaxSpeed = MaxSpeed,
+        Motions = [.. Motions],
     };
 }

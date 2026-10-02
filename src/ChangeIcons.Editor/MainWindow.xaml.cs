@@ -87,6 +87,13 @@ public partial class MainWindow : Window
             i.Mode = NameMode.Solid;
             i.Animate = 0;
         }, reshow: true);
+        foreach (var (radio, motion) in new[] { (MotionScroll, Shared.Motions.Scroll), (MotionPulse, Shared.Motions.Pulse), (MotionWave, Shared.Motions.Wave), (MotionSparkle, Shared.Motions.Sparkle) })
+        {
+            radio.Checked += (_, _) => Edit(i => i.Motion = motion);
+        }
+
+        ReverseSwitch.Checked += (_, _) => Edit(i => i.Reverse = true);
+        ReverseSwitch.Unchecked += (_, _) => Edit(i => i.Reverse = false);
         AnimateSwitch.Checked += (_, _) => Edit(i => i.Animate = SpeedSlider.Value);
         AnimateSwitch.Unchecked += (_, _) => Edit(i => i.Animate = 0);
         SpeedSlider.ValueChanged += (_, _) =>
@@ -350,6 +357,11 @@ public partial class MainWindow : Window
             MultiPanel.Visibility = mode == NameMode.Solid ? Visibility.Collapsed : Visibility.Visible;
             GameColorButton.Visibility = !icon.IsCustom && icon.Colors.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             AnimateSwitch.IsChecked = icon.Animate > 0;
+            MotionScroll.IsChecked = icon.Motion == Shared.Motions.Scroll;
+            MotionPulse.IsChecked = icon.Motion == Shared.Motions.Pulse;
+            MotionWave.IsChecked = icon.Motion == Shared.Motions.Wave;
+            MotionSparkle.IsChecked = icon.Motion == Shared.Motions.Sparkle;
+            ReverseSwitch.IsChecked = icon.Reverse;
             if (icon.Animate > 0)
             {
                 SpeedSlider.Value = icon.Animate;
@@ -516,6 +528,7 @@ public partial class MainWindow : Window
         var letters = LettersMode.IsChecked == true;
         SpeedText.Text = letters ? $"{SpeedSlider.Value * 4:0.0} steps/s" : $"{SpeedSlider.Value:0.00} loops/s";
         SpeedSlider.IsEnabled = AnimateSwitch.IsChecked == true;
+        MotionPanel.IsEnabled = AnimateSwitch.IsChecked == true;
     }
 
     // ---------------------------------------------------------------- How an icon looks
@@ -530,7 +543,7 @@ public partial class MainWindow : Window
         var colors = icon.Colors.Count > 0 ? icon.Colors : [FirstColor(icon)];
         var parsed = colors.Select(c => Images.ParseOr(c, Colors.White)).ToList();
         return parsed.Count > 1 && icon.Mode != NameMode.Solid
-            ? new NameLook(parsed, icon.Mode, icon.Animate)
+            ? new NameLook(parsed, icon.Mode, icon.Animate, icon.Motion, icon.Reverse)
             : NameLook.Solid(parsed[0]);
     }
 

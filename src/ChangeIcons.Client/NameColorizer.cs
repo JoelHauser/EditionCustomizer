@@ -149,7 +149,7 @@ public class NameColorizer : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_style is not { Speed: > 0 } || _text == null)
+        if (_style is not { Moving: true } || _text == null)
         {
             return;
         }
@@ -226,9 +226,7 @@ public class NameColorizer : MonoBehaviour
 
             for (var k = 0; k < 4; k++)
             {
-                var color = _style.Letters
-                    ? _style.Letter(letter, time)
-                    : _style.Gradient((vertices[v + k].x - minX) / width, time);
+                var color = _style.At((vertices[v + k].x - minX) / width, letter, time);
 
                 // Keep the label's own alpha, so fades still work
                 Color32 c = color;

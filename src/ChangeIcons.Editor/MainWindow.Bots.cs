@@ -52,6 +52,14 @@ public partial class MainWindow
         BotRandomColors.Unchecked += (_, _) => BotsEdit(b => b.RandomColors = false);
         BotAnimateSlider.ValueChanged += (_, _) => BotsEdit(b => b.AnimateChance = (int)Math.Round(BotAnimateSlider.Value));
         BotSpeedSlider.ValueChanged += (_, _) => BotsEdit(b => b.MaxSpeed = Math.Round(BotSpeedSlider.Value, 2));
+        foreach (var toggle in BotMotionToggles)
+        {
+            toggle.Checked += (_, _) => BotsEdit(ReadMotions);
+            toggle.Unchecked += (_, _) => BotsEdit(ReadMotions);
+        }
+
+        BotPresetsAll.Click += (_, _) => SetAllPresets(true);
+        BotPresetsNone.Click += (_, _) => SetAllPresets(false);
 
         BotIconGallery.SelectionChanged += (_, _) => BotsEdit(b =>
             b.Icons = BotIconGallery.SelectedItems.Cast<GalleryItem>().Select(BotIconEntry).OrderBy(e => e, StringComparer.Ordinal).ToList());
@@ -107,6 +115,10 @@ public partial class MainWindow
             BotRandomColors.IsChecked = _bots.RandomColors;
             BotAnimateSlider.Value = _bots.AnimateChance;
             BotSpeedSlider.Value = _bots.MaxSpeed;
+            foreach (var toggle in BotMotionToggles)
+            {
+                toggle.IsChecked = _bots.Motions.Contains((string)toggle.Tag);
+            }
 
             foreach (var toggle in BotPresetPanel.Children.OfType<ToggleButton>())
             {
@@ -160,6 +172,24 @@ public partial class MainWindow
         RefreshBotPreview();
     }
 
+    private ToggleButton[] BotMotionToggles => [BotMotionScroll, BotMotionPulse, BotMotionWave, BotMotionSparkle];
+
+    private void ReadMotions(BotsConfig bots) =>
+        bots.Motions = BotMotionToggles.Where(t => t.IsChecked == true).Select(t => (string)t.Tag).ToList();
+
+    // One edit for all of them, not one per toggle
+    private void SetAllPresets(bool on)
+    {
+        _botsLoading = true;
+        foreach (var toggle in BotPresetPanel.Children.OfType<ToggleButton>())
+        {
+            toggle.IsChecked = on;
+        }
+
+        _botsLoading = false;
+        BotsEdit(ReadPalettes);
+    }
+
     private void ReadModes(BotsConfig bots)
     {
         bots.Modes = [];
@@ -190,7 +220,7 @@ public partial class MainWindow
     private void UpdateBotTexts()
     {
         ShareText.Text = $"{_bots.Share}%";
-        BotAnimateText.Text = $"{_bots.AnimateChance}% of multi-color names";
+        BotAnimateText.Text = $"{_bots.AnimateChance}% of names";
         BotSpeedText.Text = $"{_bots.MaxSpeed:0.00} loops/s";
         BotIconCount.Text = _bots.Icons.Count == 0
             ? "None picked: bots keep the game's icon."
@@ -257,7 +287,7 @@ public partial class MainWindow
 
         var colors = look.Colors.Select(c => Images.ParseOr(c, Colors.White)).ToList();
         var mode = look.Mode switch { "gradient" => NameMode.Gradient, "letters" => NameMode.Letters, _ => NameMode.Solid };
-        var nameLook = mode == NameMode.Solid ? NameLook.Solid(colors[0]) : new NameLook(colors, mode, look.Speed);
+        var nameLook = new NameLook(colors, mode, look.Speed, look.Motion, look.Reverse);
 
         BitmapSource? icon = plainIcon;
         if (look.Icon is { } entry)
@@ -268,7 +298,8 @@ public partial class MainWindow
             icon = file == null ? plainIcon : Images.Load(System.IO.Path.Combine(_pluginFolder, file));
         }
 
-        var tag = mode switch { NameMode.Gradient => "GRADIENT", NameMode.Letters => "PER LETTER", _ => "ONE COLOR" } + (look.Speed > 0 ? " · MOVING" : "");
+        var tag = mode switch { NameMode.Gradient => "GRADIENT", NameMode.Letters => "PER LETTER", _ => "ONE COLOR" }
+            + (look.Motion != null ? " · " + look.Motion.ToUpperInvariant() + (look.Reverse ? " ↺" : "") : "");
         return (nameLook, icon, tag);
     }
 }

@@ -60,3 +60,38 @@ public static class DogtagInspectPatch
         NameColorizer.AttachStyle(label, look?.Style, label.text);
     }
 }
+
+/// <summary>
+/// "Your item was bought by NAME": a flea sale message's buyer gets that name's colors (still --
+/// a message is text, so the colors go in as rich text). The buyer comes from the message's own
+/// data, not from searching the text.
+/// </summary>
+[HarmonyPatch]
+public static class FleaBuyerMessagePatch
+{
+    public static System.Reflection.MethodBase TargetMethod() =>
+        System.Linq.Enumerable.First(AccessTools.GetDeclaredMethods(typeof(ChatShared.DialogueChatMessage)),
+            m => m.Name == nameof(ChatShared.DialogueChatMessage.ParsedText) && m.GetParameters().Length == 2);
+
+    public static void Postfix(ChatShared.DialogueChatMessage __instance, ChatShared.EViewRule viewRule, ref string __result)
+    {
+        // Only where the game itself puts rich text (its hyperlinks): the message body. Other views,
+        // such as previews, may show tags as text
+        if ((viewRule & ChatShared.EViewRule.AddHyperlink) == 0)
+        {
+            return;
+        }
+
+        var buyer = __instance.systemData?.buyerNickname;
+        if (string.IsNullOrEmpty(buyer) || string.IsNullOrEmpty(__result) || !__result.Contains(buyer))
+        {
+            return;
+        }
+
+        var look = BotLooks.For(buyer);
+        if (look?.Style != null)
+        {
+            __result = __result.Replace(buyer, look.Style.RichText(buyer));
+        }
+    }
+}
