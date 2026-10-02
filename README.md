@@ -52,8 +52,9 @@ color, a gradient or a color per letter, from the presets or made-up colors, opt
 A bot's look is worked out from its name (`src/Shared/BotLooks.cs`, compiled into both the plugin
 and the editor), so the same name looks the same every raid and nothing is stored on bots or
 profiles. It shows on the death screen ("killed by": icon and colors), in the kill list after a
-raid (colors), and on flea market sellers (icon and colors), whose names come from the same PMC
-name lists -- so a seller looks like the PMC of the same name. It is on out of the box (every library and member icon, every preset); the
+raid (colors), on flea market sellers (icon and colors), whose names come from the same PMC
+name lists -- so a seller looks like the PMC of the same name -- and on the dogtags you take
+(name colors on the tile and in the inspect window). It is on out of the box (every library and member icon, every preset); the
 editor's BOTS page narrows it down or turns it off. Because only the final name matters,
 it works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns-reloaded) and
 [Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews real
