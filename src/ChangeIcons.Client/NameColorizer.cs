@@ -22,6 +22,11 @@ public class NameColorizer : MonoBehaviour
     // not come out in the player's colors.
     private string _expected;
 
+    // When set, only these characters (by index in the source text) are colored: a name inside a
+    // sentence, such as a flea buyer in a sale message
+    private int _rangeStart = -1;
+    private int _rangeLength;
+
     public static void Attach(TMP_Text label, EMemberCategory? category, string expected = null)
     {
         var colorizer = label.GetComponent<NameColorizer>();
@@ -41,6 +46,7 @@ public class NameColorizer : MonoBehaviour
         colorizer._category = category;
         colorizer._style = style;
         colorizer._expected = expected;
+        colorizer._rangeStart = -1;
         colorizer.Subscribe();
         colorizer.Recolor();
     }
@@ -49,7 +55,7 @@ public class NameColorizer : MonoBehaviour
     /// Colors a label with a given style rather than a category's (a PMC bot's look). Null puts
     /// the label back to plain.
     /// </summary>
-    public static void AttachStyle(TMP_Text label, NameStyle style, string expected = null)
+    public static void AttachStyle(TMP_Text label, NameStyle style, string expected = null, int rangeStart = -1, int rangeLength = 0)
     {
         if (label == null)
         {
@@ -72,6 +78,8 @@ public class NameColorizer : MonoBehaviour
         colorizer._category = null;
         colorizer._style = style;
         colorizer._expected = expected;
+        colorizer._rangeStart = rangeStart;
+        colorizer._rangeLength = rangeLength;
         colorizer.Subscribe();
         colorizer.Recolor();
     }
@@ -197,7 +205,7 @@ public class NameColorizer : MonoBehaviour
         for (var i = 0; i < info.characterCount; i++)
         {
             var ch = info.characterInfo[i];
-            if (ch.isVisible)
+            if (ch.isVisible && InRange(ch.index))
             {
                 minX = Mathf.Min(minX, ch.bottomLeft.x);
                 maxX = Mathf.Max(maxX, ch.topRight.x);
@@ -211,7 +219,7 @@ public class NameColorizer : MonoBehaviour
         for (var i = 0; i < info.characterCount; i++)
         {
             var ch = info.characterInfo[i];
-            if (!ch.isVisible)
+            if (!ch.isVisible || !InRange(ch.index))
             {
                 continue;
             }
@@ -239,4 +247,6 @@ public class NameColorizer : MonoBehaviour
 
         _text.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
     }
+
+    private bool InRange(int index) => _rangeStart < 0 || (index >= _rangeStart && index < _rangeStart + _rangeLength);
 }

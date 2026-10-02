@@ -63,16 +63,17 @@ public static class DogtagInspectPatch
 }
 
 /// <summary>
-/// "Your item was bought by NAME": a flea sale message's buyer gets that name's colors (still --
-/// a message is text, so the colors go in as rich text).
+/// "Your item was bought by NAME": a flea sale message's buyer gets that name's colors, moving
+/// ones included. The message label has rich text off, so the text isn't touched: the colorizer
+/// colors just the buyer's characters in it.
 ///
-/// SPT's server writes the buyer straight into the message text and sends no systemData, so the
-/// name is read back out of the text with the game's own template for that message
-/// ("5bdabfb886f7743e152e867e 0": "Your {soldItem} {itemCount} items were bought by
-/// {buyerNickname}."). If the server and the game are in different languages that misses, so an
-/// English "bought by NAME." is tried too.
+/// SPT's server writes the buyer straight into the message text and sends no systemData, and its
+/// mail service sends a sale as MessageWithItems, not FleamarketMessage. So the name is read back
+/// out of the text with the game's own template for that message ("5bdabfb886f7743e152e867e 0":
+/// "Your {soldItem} {itemCount} items were bought by {buyerNickname}."), or an English
+/// "bought by NAME." if the server and the game are in different languages.
 /// </summary>
-[HarmonyPatch]
+[HarmonyPatch(typeof(EFT.UI.Chat.MessageView), nameof(EFT.UI.Chat.MessageView.SetSenderMessage))]
 public static class FleaBuyerMessagePatch
 {
     private const string TemplateKey = "5bdabfb886f7743e152e867e 0";
@@ -80,43 +81,33 @@ public static class FleaBuyerMessagePatch
         new(@"bought by (?<buyer>.+?)\.?\s*$", System.Text.RegularExpressions.RegexOptions.Compiled);
     private static System.Text.RegularExpressions.Regex _fromTemplate;
 
-    public static System.Reflection.MethodBase TargetMethod() =>
-        System.Linq.Enumerable.First(AccessTools.GetDeclaredMethods(typeof(ChatShared.DialogueChatMessage)),
-            m => m.Name == nameof(ChatShared.DialogueChatMessage.ParsedText) && m.GetParameters().Length == 2);
-
-    public static void Postfix(ChatShared.DialogueChatMessage __instance, ChatShared.EViewRule viewRule, ref string __result)
+    public static void Postfix(EFT.UI.Chat.MessageView __instance, ChatShared.DialogueChatMessage message)
     {
-        // Only where the game itself puts rich text (its hyperlinks): the message body. Other views,
-        // such as previews, may show tags as text
-        if ((viewRule & ChatShared.EViewRule.AddHyperlink) == 0 || string.IsNullOrEmpty(__result))
+        var label = __instance._senderMessage != null ? __instance._senderMessage._textMessage : null;
+        if (label == null)
         {
             return;
         }
 
-        int start, length;
-        var buyer = __instance.systemData?.buyerNickname;
-        if (!string.IsNullOrEmpty(buyer))
+        // Rows are reused for every message: always set or clear
+        var text = label.text;
+        var start = -1;
+        var length = 0;
+        var buyer = message?.systemData?.buyerNickname;
+        if (!string.IsNullOrEmpty(buyer) && !string.IsNullOrEmpty(text))
         {
-            start = __result.LastIndexOf(buyer, StringComparison.Ordinal);
+            start = text.LastIndexOf(buyer, StringComparison.Ordinal);
             length = buyer.Length;
         }
-        // SPT sends a sale as MessageWithItems: its mail service retypes any flea or trader
-        // message that carries ragfair details (MailSendService, "_messageTypes ... RagfairDetails")
-        else if (__instance.Type is ChatShared.EMessageType.FleamarketMessage or ChatShared.EMessageType.MessageWithItems
-                 && FindBuyer(__result, out start, out length))
+        else if (message != null && !string.IsNullOrEmpty(text)
+                 && message.Type is ChatShared.EMessageType.FleamarketMessage or ChatShared.EMessageType.MessageWithItems
+                 && FindBuyer(text, out start, out length))
         {
-            buyer = __result.Substring(start, length);
-        }
-        else
-        {
-            return;
+            buyer = text.Substring(start, length);
         }
 
-        var look = start >= 0 ? BotLooks.For(buyer) : null;
-        if (look?.Style != null)
-        {
-            __result = __result.Substring(0, start) + look.Style.RichText(buyer) + __result.Substring(start + length);
-        }
+        var look = start >= 0 && length > 0 ? BotLooks.For(buyer) : null;
+        NameColorizer.AttachStyle(label, look?.Style, text, start, length);
     }
 
     private static bool FindBuyer(string text, out int start, out int length)
