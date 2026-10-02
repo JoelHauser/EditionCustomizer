@@ -106,6 +106,15 @@ public static class FleaSellerPatch
 
     public static void Postfix(EFT.UI.Ragfair.MerchantInfoView __instance, EFT.UI.Ragfair.Offer.Merchant merchant, bool isMyOffer)
     {
+        // One line, cut short with "..." if it doesn't fit. The label wraps, and a long seller name
+        // (name mods have plenty: "SKINNY BEPIS GAMING") ran onto a second line over the rating
+        var label = __instance._merchantName;
+        if (label != null && label.enableWordWrapping)
+        {
+            label.enableWordWrapping = false;
+            label.overflowMode = TMPro.TextOverflowModes.Ellipsis;
+        }
+
         if (isMyOffer || merchant == null)
         {
             return;
