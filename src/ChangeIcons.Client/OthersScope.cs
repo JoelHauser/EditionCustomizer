@@ -21,6 +21,15 @@ public static class LocalPlayer
 
         var profile = TarkovApplication.Exist(out var app) ? app.GetClientBackEndSession()?.Profile : null;
 
+        // Said once, so a log shows straight away whether this could find you at all
+        if (!_reported)
+        {
+            _reported = true;
+            Plugin.Log.LogInfo(profile == null
+                ? "Couldn't find your profile yet: names are treated as yours until it can"
+                : $"Your profile: {profile.Nickname}. Changed game icons apply to that name only");
+        }
+
         // No session yet: can't tell, so keep the old behaviour (your look)
         if (profile == null)
         {
@@ -30,6 +39,8 @@ public static class LocalPlayer
         // Streamer mode shows a stand-in for your name; that is still you
         return name == profile.Nickname || name == profile.GetCorrectedNickname();
     }
+
+    private static bool _reported;
 
     /// <summary>
     /// Runs the game's drawing of someone else with the game's own icons. Scopes nest (a name
@@ -49,12 +60,15 @@ public static class LocalPlayer
     }
 }
 
-/// <summary>Messages tab, the conversation list: traders, system, chat bots, friends.</summary>
+/// <summary>
+/// Messages tab, the conversation list: traders, system, chat bots, friends. A row is always the
+/// other side of a conversation, never you. (Deciding by the row's Profile went wrong for traders:
+/// the trader branch only puts the trader in Profile partway through, after this has run.)
+/// </summary>
 [HarmonyPatch(typeof(DialogueView), nameof(DialogueView.SetValuesByDialogueType))]
 public static class DialogueViewScopePatch
 {
-    public static void Prefix(UpdatableChatDialogue ____dialogue, out bool __state) =>
-        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(____dialogue?.Profile?.Info?.Nickname));
+    public static void Prefix(out bool __state) => __state = LocalPlayer.Enter(true);
 
     public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
 }
