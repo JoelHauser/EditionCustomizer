@@ -149,10 +149,26 @@ public class NameColorizer : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (_style is { Speed: > 0 })
+        if (_style is not { Speed: > 0 } || _text == null)
         {
-            Recolor();
+            return;
         }
+
+        // Not while a rebuild is pending: textInfo still describes the old text until TextMeshPro
+        // rebuilds later this frame, and a reused row (the flea list) can have just been given
+        // another name. The rebuild fires TEXT_CHANGED, which recolors anyway.
+        if (_text.havePropertiesChanged)
+        {
+            return;
+        }
+
+        // Nor while scrolled out of view
+        if (_text.canvasRenderer != null && _text.canvasRenderer.cull)
+        {
+            return;
+        }
+
+        Recolor();
     }
 
     private void Recolor()
@@ -170,7 +186,7 @@ public class NameColorizer : MonoBehaviour
         }
 
         var info = _text.textInfo;
-        if (info == null || info.characterCount == 0)
+        if (info == null || info.characterCount == 0 || info.characterInfo == null || info.characterInfo.Length < info.characterCount)
         {
             return;
         }
