@@ -100,7 +100,10 @@ public static class FleaBuyerMessagePatch
             start = __result.LastIndexOf(buyer, StringComparison.Ordinal);
             length = buyer.Length;
         }
-        else if (__instance.Type == ChatShared.EMessageType.FleamarketMessage && FindBuyer(__result, out start, out length))
+        // SPT sends a sale as MessageWithItems: its mail service retypes any flea or trader
+        // message that carries ragfair details (MailSendService, "_messageTypes ... RagfairDetails")
+        else if (__instance.Type is ChatShared.EMessageType.FleamarketMessage or ChatShared.EMessageType.MessageWithItems
+                 && FindBuyer(__result, out start, out length))
         {
             buyer = __result.Substring(start, length);
         }
