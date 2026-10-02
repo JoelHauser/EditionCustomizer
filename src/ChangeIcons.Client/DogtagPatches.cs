@@ -1,3 +1,4 @@
+using System;
 using EFT;
 using EFT.InventoryLogic;
 using EFT.UI;
@@ -63,12 +64,22 @@ public static class DogtagInspectPatch
 
 /// <summary>
 /// "Your item was bought by NAME": a flea sale message's buyer gets that name's colors (still --
-/// a message is text, so the colors go in as rich text). The buyer comes from the message's own
-/// data, not from searching the text.
+/// a message is text, so the colors go in as rich text).
+///
+/// SPT's server writes the buyer straight into the message text and sends no systemData, so the
+/// name is read back out of the text with the game's own template for that message
+/// ("5bdabfb886f7743e152e867e 0": "Your {soldItem} {itemCount} items were bought by
+/// {buyerNickname}."). If the server and the game are in different languages that misses, so an
+/// English "bought by NAME." is tried too.
 /// </summary>
 [HarmonyPatch]
 public static class FleaBuyerMessagePatch
 {
+    private const string TemplateKey = "5bdabfb886f7743e152e867e 0";
+    private static readonly System.Text.RegularExpressions.Regex English =
+        new(@"bought by (?<buyer>.+?)\.?\s*$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    private static System.Text.RegularExpressions.Regex _fromTemplate;
+
     public static System.Reflection.MethodBase TargetMethod() =>
         System.Linq.Enumerable.First(AccessTools.GetDeclaredMethods(typeof(ChatShared.DialogueChatMessage)),
             m => m.Name == nameof(ChatShared.DialogueChatMessage.ParsedText) && m.GetParameters().Length == 2);
@@ -77,21 +88,68 @@ public static class FleaBuyerMessagePatch
     {
         // Only where the game itself puts rich text (its hyperlinks): the message body. Other views,
         // such as previews, may show tags as text
-        if ((viewRule & ChatShared.EViewRule.AddHyperlink) == 0)
+        if ((viewRule & ChatShared.EViewRule.AddHyperlink) == 0 || string.IsNullOrEmpty(__result))
         {
             return;
         }
 
+        int start, length;
         var buyer = __instance.systemData?.buyerNickname;
-        if (string.IsNullOrEmpty(buyer) || string.IsNullOrEmpty(__result) || !__result.Contains(buyer))
+        if (!string.IsNullOrEmpty(buyer))
+        {
+            start = __result.LastIndexOf(buyer, StringComparison.Ordinal);
+            length = buyer.Length;
+        }
+        else if (__instance.Type == ChatShared.EMessageType.FleamarketMessage && FindBuyer(__result, out start, out length))
+        {
+            buyer = __result.Substring(start, length);
+        }
+        else
         {
             return;
         }
 
-        var look = BotLooks.For(buyer);
+        var look = start >= 0 ? BotLooks.For(buyer) : null;
         if (look?.Style != null)
         {
-            __result = __result.Replace(buyer, look.Style.RichText(buyer));
+            __result = __result.Substring(0, start) + look.Style.RichText(buyer) + __result.Substring(start + length);
         }
+    }
+
+    private static bool FindBuyer(string text, out int start, out int length)
+    {
+        var match = Template()?.Match(text);
+        if (match is not { Success: true })
+        {
+            match = English.Match(text);
+        }
+
+        var group = match.Success ? match.Groups["buyer"] : null;
+        start = group?.Index ?? -1;
+        length = group?.Length ?? 0;
+        return group is { Success: true, Length: > 0 };
+    }
+
+    // The template turned into a pattern: {buyerNickname} captured, the other tags anything
+    private static System.Text.RegularExpressions.Regex Template()
+    {
+        if (_fromTemplate != null)
+        {
+            return _fromTemplate;
+        }
+
+        var template = TemplateKey.Localized();
+
+        // Locales not loaded yet: the key comes back as itself. Try again next time.
+        if (string.IsNullOrEmpty(template) || !template.Contains("{buyerNickname}"))
+        {
+            return null;
+        }
+
+        var pattern = System.Text.RegularExpressions.Regex.Escape(template.Trim())
+            .Replace(@"\{buyerNickname}", "(?<buyer>.+?)");
+        pattern = System.Text.RegularExpressions.Regex.Replace(pattern, @"\\\{[^}]*\}", ".*?");
+        _fromTemplate = new System.Text.RegularExpressions.Regex("^" + pattern + @"\s*$", System.Text.RegularExpressions.RegexOptions.Compiled);
+        return _fromTemplate;
     }
 }
