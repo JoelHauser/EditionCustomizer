@@ -40,30 +40,30 @@ function Invoke-Step([string] $title, [scriptblock] $step) {
     }
 }
 
-Invoke-Step "Server mod" { & $dotnet build "$root\src\ChangeIcons\ChangeIcons.csproj" -c Release -v q -nologo }
-Invoke-Step "Client plugin" { & $dotnet build "$root\src\ChangeIcons.Client\ChangeIcons.Client.csproj" -c Release -v q -nologo "-p:SPTPath=$SPTPath" }
+Invoke-Step "Server mod" { & $dotnet build "$root\src\NamePlate\NamePlate.csproj" -c Release -v q -nologo }
+Invoke-Step "Client plugin" { & $dotnet build "$root\src\NamePlate.Client\NamePlate.Client.csproj" -c Release -v q -nologo "-p:SPTPath=$SPTPath" }
 # A folder of its own, emptied each run, so an editor someone has open elsewhere can't block it
 $editorOut = Join-Path $root "dist\build\editor"
 Remove-Item $editorOut -Recurse -Force -ErrorAction SilentlyContinue
-Invoke-Step "Editor" { & $dotnet publish "$root\src\ChangeIcons.Editor\ChangeIcons.Editor.csproj" -c Release -v q -nologo -o $editorOut }
+Invoke-Step "Editor" { & $dotnet publish "$root\src\NamePlate.Editor\NamePlate.Editor.csproj" -c Release -v q -nologo -o $editorOut }
 
 # The layout of an SPT install
 $staging = Join-Path $root "dist\staging"
 Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
-$server = New-Item -ItemType Directory -Force (Join-Path $staging "SPT_Runtime\user\mods\ChangeIcons")
-$plugin = New-Item -ItemType Directory -Force (Join-Path $staging "BepInEx\plugins\ChangeIcons")
+$server = New-Item -ItemType Directory -Force (Join-Path $staging "SPT_Runtime\user\mods\NamePlate")
+$plugin = New-Item -ItemType Directory -Force (Join-Path $staging "BepInEx\plugins\NamePlate")
 $library = New-Item -ItemType Directory -Force (Join-Path $plugin "icons\library")
 
-Copy-Item "$root\src\ChangeIcons\bin\Release\net10.0\ChangeIcons.dll" $server
+Copy-Item "$root\src\NamePlate\bin\Release\net10.0\NamePlate.dll" $server
 Copy-Item "$root\LICENSE" $server
-Copy-Item "$root\src\ChangeIcons.Client\bin\Release\ChangeIcons.Client.dll" $plugin
+Copy-Item "$root\src\NamePlate.Client\bin\Release\NamePlate.Client.dll" $plugin
 # The editor goes in the SPT folder itself, next to EscapeFromTarkov.exe, where people find it.
 # It finds its SPT install by looking at the folder it's in and the ones above.
-Copy-Item (Join-Path $editorOut "ChangeIcons.Editor.exe") (Join-Path $staging "ChangeIcons Editor.exe")
-Copy-Item "$root\src\ChangeIcons.Client\icons\library\*.png" $library
+Copy-Item (Join-Path $editorOut "NamePlate.Editor.exe") (Join-Path $staging "Name Plate.exe")
+Copy-Item "$root\src\NamePlate.Client\icons\library\*.png" $library
 Copy-Item "$root\LICENSE" $plugin
 
-$zip = Join-Path $root "dist\EditionCustomizer-$Version.zip"
+$zip = Join-Path $root "dist\NamePlate-$Version.zip"
 Remove-Item $zip -Force -ErrorAction SilentlyContinue
 
 # Each file added by hand with a "/" path: in Windows PowerShell 5.1 both Compress-Archive and
@@ -92,7 +92,7 @@ try {
     }
 
     $archive.Entries | Where-Object { $_.Length -gt 0 -and $_.FullName -notlike "*/icons/library/*" } | ForEach-Object { "  $($_.FullName)  ($([math]::Round($_.Length / 1KB)) KB)" }
-    "  BepInEx/plugins/ChangeIcons/icons/library/  ($(@($archive.Entries | Where-Object { $_.FullName -like '*/icons/library/*.png' }).Count) icons)"
+    "  BepInEx/plugins/NamePlate/icons/library/  ($(@($archive.Entries | Where-Object { $_.FullName -like '*/icons/library/*.png' }).Count) icons)"
 }
 finally {
     $archive.Dispose()

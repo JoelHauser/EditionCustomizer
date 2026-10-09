@@ -6,7 +6,7 @@ using System.Globalization;
 // Compiled into both the plugin (net472, the game's Mono) and the editor (.NET 10), so the
 // editor's preview is exactly what the game draws. Keep it to APIs both have, and keep every
 // random draw in the same order: a bot's look is the sequence of draws seeded by its name.
-namespace ChangeIcons.Shared
+namespace NamePlate.Shared
 {
     /// <summary>The ways a name can move. Any of them can also run in reverse.</summary>
     public static class Motions
@@ -23,10 +23,41 @@ namespace ChangeIcons.Shared
         /// <summary>Letters flash white now and then.</summary>
         public const string Sparkle = "sparkle";
 
-        public static readonly string[] All = { Scroll, Pulse, Wave, Sparkle };
+        /// <summary>Every hue in turn, sweeping across the name; the name's own colors aren't used.</summary>
+        public const string Rainbow = "rainbow";
+
+        /// <summary>Letters now and then jump aside and flash another of the name's colors.</summary>
+        public const string Glitch = "glitch";
+
+        /// <summary>Letters hop up one after another.</summary>
+        public const string Bounce = "bounce";
+
+        public static readonly string[] All = { Scroll, Pulse, Wave, Sparkle, Rainbow, Glitch, Bounce };
 
         /// <summary>Those that show on a one-color name: the others need two colors to move between.</summary>
-        public static readonly string[] OneColor = { Wave, Sparkle };
+        public static readonly string[] OneColor = { Wave, Sparkle, Rainbow, Glitch, Bounce };
+
+        /// <summary>Those that move the letters, not only their colors.</summary>
+        public static bool MovesLetters(string motion) => motion == Glitch || motion == Bounce;
+    }
+
+    /// <summary>Looks on a name's letters, as icons.json and the bots section name them.</summary>
+    public static class NameEffectKinds
+    {
+        public const string Outline = "outline";
+        public const string Glow = "glow";
+        public const string Shadow = "shadow";
+        public const string Bold = "bold";
+        public const string Italic = "italic";
+        public const string SmallCaps = "smallcaps";
+
+        public static readonly string[] All = { Outline, Glow, Shadow, Bold, Italic, SmallCaps };
+    }
+
+    /// <summary>Movements or a halo on an icon itself.</summary>
+    public static class IconEffectKinds
+    {
+        public static readonly string[] All = { "pulse", "glow", "flip", "float" };
     }
 
     /// <summary>What PMC bots may be given. Mapped from the "bots" section of icons.json.</summary>
@@ -55,6 +86,30 @@ namespace ChangeIcons.Shared
 
         /// <summary>Which of <see cref="Shared.Motions"/> they may use.</summary>
         public string[] Motions = Shared.Motions.All;
+
+        /// <summary>Percent of bots with a look that also get a clan tag before their name.</summary>
+        public int TagChance = BotDefaults.TagChance;
+
+        /// <summary>The tags to pick from; null for the built-in <see cref="BotTags.All"/>.</summary>
+        public string[] Tags;
+
+        /// <summary>
+        /// BEAR bots draw warm colors, USEC bots cool ones (where the game says which side a bot is
+        /// on: the death screen, the kill list, dogtags).
+        /// </summary>
+        public bool FactionColors;
+
+        /// <summary>Percent of bots with a look whose name also gets one of <see cref="Effects"/>.</summary>
+        public int EffectChance = BotDefaults.EffectChance;
+
+        /// <summary>Which of <see cref="NameEffectKinds"/> they may get; null for all.</summary>
+        public string[] Effects;
+
+        /// <summary>Percent of bots with an icon from the pool whose icon also moves or glows.</summary>
+        public int IconEffectChance = BotDefaults.IconEffectChance;
+
+        /// <summary>Which of <see cref="IconEffectKinds"/> they may get; null for all.</summary>
+        public string[] IconEffects;
     }
 
     public sealed class Preset
@@ -111,6 +166,9 @@ namespace ChangeIcons.Shared
 
         public const int AnimateChance = 50;
         public const double MaxSpeed = 1.0;
+        public const int TagChance = 35;
+        public const int EffectChance = 25;
+        public const int IconEffectChance = 15;
 
         /// <summary>
         /// The icon pool: <paramref name="libraryIcons"/> ("icons/library/skull.png" ...) plus the
@@ -138,6 +196,9 @@ namespace ChangeIcons.Shared
                 Palettes = palettes,
                 AnimateChance = AnimateChance,
                 MaxSpeed = MaxSpeed,
+                TagChance = TagChance,
+                EffectChance = EffectChance,
+                IconEffectChance = IconEffectChance,
             };
         }
     }
@@ -159,13 +220,29 @@ namespace ChangeIcons.Shared
 
         /// <summary>An entry of <see cref="BotRules.Icons"/>, or null for the bot's own icon.</summary>
         public string Icon;
+
+        /// <summary>A clan tag shown before the name, or null.</summary>
+        public string Tag;
+
+        /// <summary>One of <see cref="NameEffectKinds"/>, or null.</summary>
+        public string Effect;
+
+        /// <summary>The outline's or glow's color, "#RRGGBB"; null for the others.</summary>
+        public string EffectColor;
+
+        /// <summary>One of <see cref="IconEffectKinds"/>, or null.</summary>
+        public string IconEffect;
     }
 
     public static class BotLookGenerator
     {
         public const string MemberPrefix = "member:";
 
-        public static BotLook For(string name, BotRules rules)
+        public const string Bear = "bear";
+        public const string Usec = "usec";
+
+        /// <param name="side"><see cref="Bear"/>, <see cref="Usec"/> or null when it isn't known.</param>
+        public static BotLook For(string name, BotRules rules, string side = null)
         {
             if (rules == null || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(name.Trim()))
             {
@@ -201,6 +278,21 @@ namespace ChangeIcons.Shared
 
             var look = new BotLook { Mode = modes[rng.Next(modes.Count)] };
             var palettes = rules.Palettes ?? new string[0][];
+            var faction = rules.FactionColors && (side == Bear || side == Usec) ? side : null;
+            if (faction != null)
+            {
+                var own = new List<string[]>();
+                foreach (var p in palettes)
+                {
+                    if (IsWarm(p) == (faction == Bear))
+                    {
+                        own.Add(p);
+                    }
+                }
+
+                palettes = own.ToArray();
+            }
+
             var usePreset = palettes.Length > 0 && (!rules.RandomColors || rng.Next(2) == 0);
 
             if (look.Mode == "solid")
@@ -212,15 +304,15 @@ namespace ChangeIcons.Shared
                 }
                 else
                 {
-                    look.Colors = new[] { RandomScheme(rng)[0] };
+                    look.Colors = new[] { RandomScheme(rng, faction)[0] };
                 }
             }
             else
             {
-                look.Colors = usePreset ? palettes[rng.Next(palettes.Length)] : RandomScheme(rng);
+                look.Colors = usePreset ? palettes[rng.Next(palettes.Length)] : RandomScheme(rng, faction);
                 if (look.Colors.Length < 2)
                 {
-                    look.Colors = new[] { look.Colors[0], RandomScheme(rng)[0] };
+                    look.Colors = new[] { look.Colors[0], RandomScheme(rng, faction)[0] };
                 }
             }
 
@@ -244,7 +336,72 @@ namespace ChangeIcons.Shared
 
             var icons = rules.Icons ?? new string[0];
             look.Icon = icons.Length > 0 ? icons[rng.Next(icons.Length)] : null;
+
+            // The extras come last, each drawing the same numbers whether it fires or not, so turning
+            // one on or off, or up or down, never changes the rest of a look
+            var tags = rules.Tags ?? BotTags.All;
+            var tagRoll = rng.Next(100);
+            var tagPick = rng.Next(Math.Max(1, tags.Length));
+            if (tags.Length > 0 && tagRoll < rules.TagChance)
+            {
+                look.Tag = BotTags.Clean(tags[tagPick]);
+            }
+
+            var effects = rules.Effects ?? NameEffectKinds.All;
+            var effectRoll = rng.Next(100);
+            var effectPick = rng.Next(Math.Max(1, effects.Length));
+            var colorPick = rng.Next(look.Colors.Length);
+            if (effects.Length > 0 && effectRoll < rules.EffectChance)
+            {
+                look.Effect = effects[effectPick];
+                look.EffectColor = look.Effect == NameEffectKinds.Glow ? look.Colors[colorPick]
+                    : look.Effect == NameEffectKinds.Outline ? "#000000"
+                    : null;
+            }
+
+            var iconEffects = rules.IconEffects ?? IconEffectKinds.All;
+            var iconRoll = rng.Next(100);
+            var iconPick = rng.Next(Math.Max(1, iconEffects.Length));
+            if (look.Icon != null && iconEffects.Length > 0 && iconRoll < rules.IconEffectChance)
+            {
+                look.IconEffect = iconEffects[iconPick];
+            }
+
             return look;
+        }
+
+        /// <summary>A palette leans warm (reds to yellows, BEAR) or cool (greens to purples, USEC).</summary>
+        public static bool IsWarm(string[] palette)
+        {
+            double x = 0, y = 0;
+            foreach (var hex in palette)
+            {
+                var rgb = NamePaint.Parse(hex);
+                if (rgb == null)
+                {
+                    continue;
+                }
+
+                var hue = Hue(rgb[0], rgb[1], rgb[2]);
+                x += Math.Cos(hue * Math.PI / 180);
+                y += Math.Sin(hue * Math.PI / 180);
+            }
+
+            var mean = Wrap(Math.Atan2(y, x) * 180 / Math.PI);
+            return mean < 75 || mean >= 300;
+        }
+
+        private static double Hue(double r, double g, double b)
+        {
+            var max = Math.Max(r, Math.Max(g, b));
+            var d = max - Math.Min(r, Math.Min(g, b));
+            if (d <= 0)
+            {
+                return 0;
+            }
+
+            var h = max == r ? (g - b) / d % 6 : max == g ? (b - r) / d + 2 : (r - g) / d + 4;
+            return Wrap(h * 60);
         }
 
         /// <summary>FNV-1a over the name's UTF-16 code units: the same on every runtime.</summary>
@@ -264,10 +421,12 @@ namespace ChangeIcons.Shared
         /// Made-up colors that belong together: neighbouring hues, opposites, a triad, shades of one
         /// hue, pastels or neons -- two to five of them.
         /// </summary>
-        private static string[] RandomScheme(Rng rng)
+        private static string[] RandomScheme(Rng rng, string faction)
         {
             var kind = rng.Next(6);
-            var hue = rng.NextDouble() * 360;
+
+            // The same draw either way; a faction squeezes it into its own range of hues
+            var hue = rng.NextDouble() * (faction == null ? 360 : 110) + (faction == Bear ? -35 : faction == Usec ? 160 : 0);
             var count = 2 + rng.Next(4);
             var colors = new string[count];
 
@@ -398,6 +557,41 @@ namespace ChangeIcons.Shared
 
         public bool Moving => _motion != null;
 
+        /// <summary>The letters move (bounce, glitch), not just their colors.</summary>
+        public bool MovesLetters => Motions.MovesLetters(_motion);
+
+        /// <summary>
+        /// How far a letter is moved, in ems (the font's size): a bounce hops letters up in turn, a
+        /// glitch knocks one aside now and then. Positive y is up.
+        /// </summary>
+        public void Offset(int letter, double time, out double dx, out double dy)
+        {
+            dx = dy = 0;
+            var t = time * _speed * _sign;
+            if (_motion == Motions.Bounce)
+            {
+                var wave = Math.Sin(2 * Math.PI * (t - letter * 0.09));
+                dy = wave > 0 ? 0.16 * wave : 0;
+            }
+            else if (_motion == Motions.Glitch)
+            {
+                var h = Mix(letter, (int)Math.Floor(Math.Abs(t) * 9));
+                if (h % 100 < 9)
+                {
+                    dx = ((int)(h / 100 % 7) - 3) * 0.035;
+                    dy = ((int)(h / 700 % 5) - 2) * 0.03;
+                }
+            }
+        }
+
+        private static uint Mix(int a, int b)
+        {
+            var h = unchecked((uint)a * 2654435761u ^ (uint)b * 2246822519u);
+            h ^= h >> 13;
+            h = unchecked(h * 3266489917u);
+            return h ^ (h >> 16);
+        }
+
         public int Count => _colors.Length;
 
         public double[] Color(int index) => _colors[index];
@@ -450,6 +644,13 @@ namespace ChangeIcons.Shared
                         Copy(_colors[Mod(letter, n)], rgb);
                         Flash(letter, t, rgb);
                         return;
+                    case Motions.Rainbow:
+                        Hsv(Frac(letter * 0.09 + t * 0.5), rgb);
+                        return;
+                    case Motions.Glitch:
+                        Copy(_colors[Mod(letter, n)], rgb);
+                        Glitched(letter, t, rgb);
+                        return;
                     default:
                         Copy(_colors[Mod(letter, n)], rgb);
                         return;
@@ -470,6 +671,13 @@ namespace ChangeIcons.Shared
                 case Motions.Sparkle:
                     Sample(Clamp01(x) * (n - 1), false, rgb);
                     Flash(letter, t, rgb);
+                    return;
+                case Motions.Rainbow:
+                    Hsv(Frac(x * 0.8 + t * 0.5), rgb);
+                    return;
+                case Motions.Glitch:
+                    Sample(Clamp01(x) * (n - 1), false, rgb);
+                    Glitched(letter, t, rgb);
                     return;
                 default:
                     Sample(Clamp01(x) * (n - 1), false, rgb);
@@ -492,6 +700,43 @@ namespace ChangeIcons.Shared
                 {
                     rgb[k] += (1 - rgb[k]) * amount * 0.85;
                 }
+            }
+        }
+
+        // While a letter is knocked aside (see Offset) it shows another of the colors, or white
+        private void Glitched(int letter, double t, double[] rgb)
+        {
+            var h = Mix(letter, (int)Math.Floor(Math.Abs(t) * 9));
+            if (h % 100 < 9)
+            {
+                var pick = (int)(h / 3500 % (uint)(_colors.Length + 1));
+                if (pick == _colors.Length)
+                {
+                    rgb[0] = rgb[1] = rgb[2] = 1;
+                }
+                else
+                {
+                    Copy(_colors[pick], rgb);
+                }
+            }
+        }
+
+        // A fully saturated, slightly soft hue (0..1 round the wheel)
+        private static void Hsv(double hue, double[] rgb)
+        {
+            var h = hue * 6;
+            var i = (int)Math.Floor(h);
+            var f = h - i;
+            const double v = 1.0, s = 0.72;
+            double p = v * (1 - s), q = v * (1 - s * f), u = v * (1 - s * (1 - f));
+            switch (Mod(i, 6))
+            {
+                case 0: rgb[0] = v; rgb[1] = u; rgb[2] = p; break;
+                case 1: rgb[0] = q; rgb[1] = v; rgb[2] = p; break;
+                case 2: rgb[0] = p; rgb[1] = v; rgb[2] = u; break;
+                case 3: rgb[0] = p; rgb[1] = q; rgb[2] = v; break;
+                case 4: rgb[0] = u; rgb[1] = p; rgb[2] = v; break;
+                default: rgb[0] = v; rgb[1] = p; rgb[2] = q; break;
             }
         }
 

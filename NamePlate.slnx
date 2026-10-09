@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/NamePlate/NamePlate.csproj" />
+  <Project Path="src/NamePlate.Client/NamePlate.Client.csproj" />
+  <Project Path="src/NamePlate.Editor/NamePlate.Editor.csproj" />
+</Solution>

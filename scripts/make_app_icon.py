@@ -1,62 +1,66 @@
-"""Draws the editor's app icon: src/ChangeIcons.Editor/Assets/app.ico
+"""Draws the editor's app icon: src/NamePlate.Editor/Assets/app.ico (and the header's logo.png)
 
     python scripts/make_app_icon.py
 
-Gold rank chevrons (the library's "chevrons", also the editor's header logo) on a dark rounded
-tile, with a thin gradient line under them for the name colors. Every size is drawn from 1024 px
-and scaled down, so the small ones stay clean.
+The library's cat, drawn the same way as the library icons (tone map, color, dark outline) but
+kept at full size instead of shrunk to 64 px, then scaled down for each icon size.
 """
 import os
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageFilter
 
-from make_icons import chevrons, render
+from make_icons import S, cat, hex_rgb
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEST = os.path.join(HERE, "..", "src", "ChangeIcons.Editor", "Assets", "app.ico")
-BIG = 1024
+DEST = os.path.join(HERE, "..", "src", "NamePlate.Editor", "Assets", "app.ico")
 SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256]
+COLOR = "#F0A04B"  # the library cat's color
 
 
-def tile():
-    img = Image.new("RGBA", (BIG, BIG), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    # Dark tile with a soft top-to-bottom shade and a gold rim
-    for y in range(BIG):
-        shade = int(34 - 16 * y / BIG)
-        d.line([(0, y), (BIG, y)], fill=(shade, shade + 3, shade + 5, 255))
-    mask = Image.new("L", (BIG, BIG), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((24, 24, BIG - 24, BIG - 24), 200, fill=255)
-    out = Image.new("RGBA", (BIG, BIG), (0, 0, 0, 0))
-    out.paste(img, mask=mask)
-    ImageDraw.Draw(out).rounded_rectangle((24, 24, BIG - 24, BIG - 24), 200, outline=(201, 183, 127, 255), width=22)
+UP = 4  # drawn at 4x and scaled down, so the big sizes have smooth edges
 
-    # The chevrons, in the header's gold
-    mark = render(chevrons(), "#C9B77F").resize((600, 600), Image.LANCZOS)
-    out.alpha_composite(mark, ((BIG - 600) // 2, 150))
 
-    # A gradient line: the colors a name can take
-    stops = [(255, 77, 77), (255, 159, 28), (255, 225, 77), (91, 227, 107), (61, 185, 255), (139, 92, 255)]
-    x0, x1, y0, y1 = 250, BIG - 250, 790, 836
-    line = Image.new("RGBA", (x1 - x0, y1 - y0))
-    lp = line.load()
-    for x in range(x1 - x0):
-        t = x / (x1 - x0 - 1) * (len(stops) - 1)
-        i = min(int(t), len(stops) - 2)
-        f = t - i
-        c = tuple(int(stops[i][k] + (stops[i + 1][k] - stops[i][k]) * f) for k in range(3))
-        for y in range(y1 - y0):
-            lp[x, y] = c + (255,)
-    lmask = Image.new("L", line.size, 0)
-    ImageDraw.Draw(lmask).rounded_rectangle((0, 0, line.width - 1, line.height - 1), 23, fill=255)
-    out.paste(line, (x0, y0), lmask)
-    return out
+def smooth_up(mask_or_tones, levels):
+    """Scales a hard-edged tone map up UP times with soft curves, then snaps each pixel back to
+    the nearest of its tones, so the shapes come out as smooth outlines rather than stair steps."""
+    big = mask_or_tones.resize((S * UP, S * UP), Image.BICUBIC)
+    table = [min(levels, key=lambda t: abs(t - v)) for v in range(256)]
+    return big.point(table)
+
+
+def render_full(tones, color):
+    """make_icons.render (tone map, color, dark outline) at UP times the size, without its shrink to 64 px."""
+    rgb = hex_rgb(color)
+    levels = [tone for tone, count in enumerate(tones.histogram()) if count]
+    alpha = tones.point(lambda v: 255 if v > 0 else 0)
+    outline = smooth_up(alpha.filter(ImageFilter.MaxFilter(21)), [0, 255])
+    tones = smooth_up(tones, levels)
+    size = S * UP
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = img.load()
+    tp = tones.load()
+    for y in range(size):
+        light = 1.18 - 0.36 * y / size
+        for x in range(size):
+            v = tp[x, y]
+            if v:
+                k = v / 255 * light
+                px[x, y] = tuple(min(255, int(c * k)) for c in rgb) + (255,)
+    ring = ImageChops.subtract(outline, tones.point(lambda v: 255 if v > 0 else 0))
+    base = Image.new("RGBA", (size, size), (10, 12, 13, 0))
+    base.putalpha(ring)
+    base.alpha_composite(img)
+    padded = Image.new("RGBA", (size + 24 * UP, size + 24 * UP), (0, 0, 0, 0))
+    padded.alpha_composite(base, (12 * UP, 12 * UP))
+    return padded
 
 
 def main():
-    big = tile()
+    big = render_full(cat(), COLOR)
     images = [big.resize((s, s), Image.LANCZOS) for s in SIZES]
     images[-1].save(DEST, format="ICO", sizes=[(s, s) for s in SIZES], append_images=images[:-1])
-    big.resize((256, 256), Image.LANCZOS).save(os.path.join(HERE, "app-icon.png"))
+    images[-1].save(os.path.join(HERE, "app-icon.png"))
+    # The editor's header logo
+    big.resize((64, 64), Image.LANCZOS).save(os.path.join(os.path.dirname(DEST), "logo.png"))
 
     # Sheet of every size, for checking by eye
     sheet = Image.new("RGBA", (sum(SIZES) + 12 * len(SIZES) + 12, 256 + 24), (40, 40, 40, 255))

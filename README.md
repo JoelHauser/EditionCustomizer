@@ -1,131 +1,163 @@
-# ChangeIcons
+# Name Plate
 
-> **This fork (EditionCustomizer)** builds on [Evgencheg/Tarkov-Change-Icons](https://github.com/Evgencheg/Tarkov-Change-Icons)
-> and adds custom icons, multi-color nicknames and a desktop editor. See
-> [Custom icons](#custom-icons-this-branch) below. The original server command is unchanged
-> apart from accepting the new custom flags.
->
-> **Status:** everything builds, and the editor was tested against a copy of an SPT 4.1
-> install: reading the game's icons, saving `icons.json`, and writing a profile. The client
-> plugin has **not been run in game yet**. The first things to check there are the multi-color
-> nicknames (`NameColorizer`), the live reload of `icons.json`, and PMC bot looks on the death
-> screen and kill list.
+Make your name stand out in Escape from Tarkov (SPT 4.1). Give your nickname colors, gradients,
+animations, a glow and a clan tag. Pick any icon from the game, from a library of 107 extra icons
+(12 of them animated) or from a picture of your own. PMC bots get looks of their own too, so the
+names on the death screen, the flea market and the dogtags you take aren't all plain gray.
 
-Adds icons to your account: Sherpa, Emissary, Developer, Unheard or Edge of Darkness.
+Everything is set up in **Name Plate.exe**, an editor with a live preview:
 
-I saw many people on the SPT Discord server asking how to get these icons, so I created a mod that allows you to do so with a single chat message.
+![The Name Plate editor](docs/editor-icons.png)
 
-Server mod for SPT (SP-Tushonka) 4.1.
+> Name Plate was called **Edition Customizer** before, and grew out of Evgencheg's
+> [Tarkov-Change-Icons](https://github.com/Evgencheg/Tarkov-Change-Icons) (the `spt membercategory`
+> chat command). Coming from Edition Customizer? See [Updating](#updating-from-edition-customizer).
 
-## Features
+## What you can do
 
-Message **SPT** in your friends list:
-- `spt membercategory` - what you have now
-- `spt membercategory list` - what you can add
-- `spt membercategory 1026` or `spt membercategory unheard+uniqueid` - set your icons
-- `spt membercategory default` - back to what your game edition has
+**Your name**
+- One color, a gradient across the name, or a color per letter.
+- Animations: scroll, pulse, wave, sparkle, rainbow, glitch and bounce, at any speed and in either direction.
+- Effects: outline, glow, drop shadow and italic.
+- A clan tag of up to 5 letters or digits: `[EZ] YourName`.
+- Optionally, your scav's name wears the same look.
 
-Fully restart the game after a change. Choose which icon is shown in the profile settings.
+**Your icon**
+- Any of the game's own icons (about 1,100 are read straight out of the game files), the 107 library icons, or your own PNGs.
+- Recolor the game's member icons, or add brand-new ones next to Standard, Edge of Darkness, Unheard and the rest.
+- Animated icons, plus icon effects: pulse, glow, flip and float.
+- Hide the prestige badge or swap it for a picture of your own.
 
-Trader, Group, System and other service flags can't be set, they break the profile.
+**Sharing**
+- Save your own presets.
+- Copy a look as a short code that anyone with the mod can paste.
 
-## Custom icons (this branch)
+## Where it shows up
 
-Three more pieces make the icons themselves customizable: new icons, your own pictures, and
-nicknames in as many colors as you like.
+| Where | Whose look |
+| --- | --- |
+| Main menu name and icon | yours |
+| Settings dropdown, where you pick the icon you show | yours |
+| Anywhere else the game draws your member icon next to your name | yours |
+| Death screen ("killed by") | the PMC bot that killed you |
+| Kill list after a raid | the PMC bots you killed |
+| Flea market seller names | PMC bots, matching the PMC of the same name |
+| Messages: "your item was bought by…" | the buyer |
+| Dogtags you take, on the tile and in the inspect window | the PMC bot it came from |
 
-- **ChangeIcons.Client** (BepInEx plugin, `BepInEx/plugins/ChangeIcons`) reads `icons.json` and
-  changes the game's icon table: recolor or replace the existing icons, or add new ones on free
-  flags (2048, 4096, ...). Nicknames can be one color, a gradient across the name, or a color per
-  letter, still or moving -- scroll, pulse, wave or sparkle, either way round. It reloads
-  `icons.json` while the game runs; reopen a screen to see it.
-  A changed game icon (Standard, Edge of Darkness, ...) is your look only: traders, system
-  messages, chat bots, flea sellers and other players keep the game's own.
-- **ChangeIcons Editor.exe** (in the SPT folder, next to `EscapeFromTarkov.exe`) edits all of that with a live preview. It reads every
-  icon straight out of the game's `resources.assets` into `game-icons/` (about 1,100, plus the
-  member icon table with the game's own colors), comes with a library of 31 extra icons
-  (`icons/library`, drawn by `scripts/make_icons.py`), imports and recolors images, and sets which
-  icons a character has and which one is shown. It only writes a profile while the SPT server is
-  closed, and backs it up to `backups/` first.
+Traders, system messages, chat bots and other real players always keep the game's own look. A
+game icon you change (say, Edge of Darkness) changes only for you, never for everyone who has it.
 
-**PMC bots** can get looks too: an icon from the library or the member icons, and a name in one
-color, a gradient or a color per letter, from 24 presets or made-up color schemes (neighbouring
-hues, opposites, triads, shades, pastels, neons), and about half of them moving in one of the four
-animations.
-A bot's look is worked out from its name (`src/Shared/BotLooks.cs`, compiled into both the plugin
-and the editor), so the same name looks the same every raid and nothing is stored on bots or
-profiles. It shows on the death screen ("killed by": icon and colors), in the kill list after a
-raid (colors), on flea market sellers (icon and colors), whose names come from the same PMC
-name lists -- so a seller looks like the PMC of the same name -- and on the dogtags you take
-(name colors on the tile and in the inspect window). It is on out of the box (every library and member icon, every preset); the
-editor's BOTS page narrows it down or turns it off. Because only the final name matters,
-it works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns-reloaded) and
-[Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews real
-names from whichever of them is installed.
+## Using the editor
 
-With MoxoPixel's Menu Overhaul installed, its main-screen name gets your
-icon and colors too (it hides the game's own name row and draws its own). That happens only when the
-icon you show is one you've changed; otherwise its accent color stays.
+1. Run **Name Plate.exe** from your SPT folder. The first time, it reads the game's icons (a second or two).
+2. **Icons page:** pick an icon on the left, or press **New** to make one. Choose its colors,
+   animation, effects, tag and picture. The preview at the top shows how it looks on the main menu.
+3. **Profile page:** tick the icons your character has and choose the one that's shown. The SPT
+   server must be closed for this; the editor backs your profile up first.
+4. Press **Save**.
 
-The server command takes the new flags too: `spt membercategory unheard+uniqueid+2048`.
+You can change looks while the game is running; reopen a screen to see the change. Changing which
+icons a character has needs the server closed and a game restart.
 
-Limit: the settings dropdown draws its small icon from a fixed sprite sheet, so there a new icon
-shows as its name only, and a replaced icon keeps the game's original small picture.
+## PMC bots
 
-```
-dotnet build src/ChangeIcons.Client/ChangeIcons.Client.csproj -c Release -p:SPTPath="C:\SPT" -p:DeployToSPT=true
-dotnet publish src/ChangeIcons.Editor/ChangeIcons.Editor.csproj -c Release -o dist/editor
-python scripts/make_icons.py
-```
+![PMC names in Name Plate looks](docs/names.png)
 
-The client compiles against the install's Assembly-CSharp, so the install must have been launched
-once. The editor reads the game's files with [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET);
-`src/ChangeIcons.Editor/Assets/classdata.tpk` is its class database, from
-[UABEA](https://github.com/nesrak1/UABEA) (MIT).
+Bots are on out of the box. Each bot's look comes from its name, so the same bot looks the same
+in every raid, and nothing is stored on bots or profiles. They draw from every library icon and
+the member icons, with 24 color presets plus made-up color schemes:
+- About half of them have animated names.
+- About a third wear a clan tag. There are 487 of them, like `[EZ]`, `[L2P]` or `[1V9]`, so two bots rarely share one.
+- Some get name effects and icon effects.
+
+The **Bots** page sets how many bots get a look and which icons, animations and effects they can
+use. It can also give BEAR bots warm colors and USEC bots cool ones, or turn bot looks off.
+
+![The Bots page](docs/editor-bots.png)
+
+It works with [Bot Callsigns Reloaded](https://sp-mod.com/mod/1873/bot-callsigns-reloaded) and
+[Realistic PMC Names](https://sp-mod.com/mod/3064/realistic-pmc-names); the editor previews names
+from whichever one you have installed.
 
 ## Installation
 
-Unpack `EditionCustomizer-<version>.zip` into your SPT folder (the one with
-`EscapeFromTarkov.exe`). You should get:
+Needs SPT 4.1.x. The editor also needs the
+[.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0); if it's missing,
+Windows offers the download when you start the editor.
+
+Unpack `NamePlate-<version>.zip` into your SPT folder (the one with `EscapeFromTarkov.exe`). You should get:
 
 ```
-ChangeIcons Editor.exe                                       the editor
-SPT_Runtime/user/mods/ChangeIcons/ChangeIcons.dll            server mod (the chat command)
-BepInEx/plugins/ChangeIcons/ChangeIcons.Client.dll           client plugin (icons, colors, bots)
-BepInEx/plugins/ChangeIcons/icons/library/*.png              31 extra icons
+Name Plate.exe                                   the editor
+SPT_Runtime/user/mods/NamePlate/NamePlate.dll    server mod (the chat command)
+BepInEx/plugins/NamePlate/NamePlate.Client.dll   client plugin (icons, colors, bots)
+BepInEx/plugins/NamePlate/icons/library/*.png    107 extra icons
 ```
 
-Then run **ChangeIcons Editor.exe** from your SPT folder. The first time it reads the game's icons
-(a second or two), then everything is set up in the editor; press SAVE to write your
-`icons.json`. The zip doesn't include an `icons.json`, so updating never overwrites yours.
+The zip has no `icons.json`, so updating never overwrites your looks.
 
-The editor needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0);
-if it's missing, Windows offers the download when you start the editor. The mods themselves
-don't need it.
+### Updating from Edition Customizer
 
-To make a release zip: `.\scripts\package.ps1 -SPTPath C:\SPT -Version 1.0.0` (writes
-`dist\EditionCustomizer-1.0.0.zip`). It needs an SPT install that has been launched once, because
-the client plugin compiles against the game's patched `Assembly-CSharp`, so it can't run on
-GitHub Actions.
+Name Plate is the same mod under a new name.
+1. Move `icons.json`, and any PNGs of your own, from `BepInEx/plugins/ChangeIcons` into `BepInEx/plugins/NamePlate`.
+2. Delete `BepInEx/plugins/ChangeIcons`, `SPT_Runtime/user/mods/ChangeIcons` and `ChangeIcons Editor.exe`.
 
-## Uninstallation
+If the old copy is still there, the game and server load only one of the two and log why.
 
-Delete `SPT_Runtime/user/mods/ChangeIcons`, `BepInEx/plugins/ChangeIcons` and `ChangeIcons Editor.exe`.
+### Uninstallation
 
-Your icons stay on the account. To reset them, send `spt membercategory default` (or untick them
-in the editor's PROFILE page) before deleting the mod.
+Delete `SPT_Runtime/user/mods/NamePlate`, `BepInEx/plugins/NamePlate` and `Name Plate.exe`.
+
+Your icons stay on the account. To reset them, untick them on the editor's Profile page (or send
+`spt membercategory default`) before deleting the mod.
+
+## Chat command
+
+The editor's Profile page does this for you, but the server mod also takes chat commands. Message
+**SPT** in your friends list:
+- `spt membercategory`: what you have now
+- `spt membercategory list`: what you can add
+- `spt membercategory unheard+uniqueid+2048`: set your icons by name or number. 2048 and up are new icons you made in the editor.
+- `spt membercategory default`: back to what your game edition has
+
+Restart the game fully after a change. Trader, Group, System and other service flags can't be set,
+because they break the profile.
+
+## Compatibility
+
+- **Fika:** checked against Fika 2.4.4 at the code level; not yet tested in a live co-op session.
+  - The two never patch the same thing in conflicting ways, and custom icon flags travel through Fika's profile sync untouched.
+  - Real players are never given bot looks. Human PMCs carry a different role from bot PMCs, and the plugin remembers the people it meets in raids and on your friends list (`players.json`).
+  - Other players see your look only if they run the mod; without it, they see the Standard icon. If the host lists this mod as required, everyone needs the same version.
+  - Fika's nameplates for its own developers borrow the Developer and Edge of Darkness pictures, so a picture you changed there shows on those plates too.
+- **MoxoPixel's Menu Overhaul:** its main-screen name gets your icon and colors when the icon you show is one you've changed.
+- **Limit:** the settings dropdown draws its small icon from a fixed sprite sheet. There, a new icon shows as its name only, and a replaced icon keeps the game's small picture.
 
 ## Building
 
 ```
-dotnet build src/ChangeIcons/ChangeIcons.csproj -c Release
+dotnet build src/NamePlate/NamePlate.csproj -c Release
+dotnet build src/NamePlate.Client/NamePlate.Client.csproj -c Release -p:SPTPath="C:\SPT" -p:DeployToSPT=true
+dotnet publish src/NamePlate.Editor/NamePlate.Editor.csproj -c Release -o dist/editor
+python scripts/make_icons.py          # the icon library
+python scripts/make_app_icon.py       # the editor's icon
 ```
 
-Needs the .NET 10 SDK.
+- Needs the .NET 10 SDK.
+- The client plugin compiles against the install's patched `Assembly-CSharp`, so that SPT install must have been launched once. This is also why only the server mod builds on GitHub Actions.
+- To make a release zip, run `.\scripts\package.ps1 -SPTPath C:\SPT -Version 1.0.0`. It writes `dist\NamePlate-1.0.0.zip`.
+
+How it works, for anyone reading the code:
+- The game's member icons live in one table (`ChatSpecialIconSettings`). The plugin edits that table and adds rows for new flags (2048, 4096, …).
+- Name colors are drawn by recoloring TextMeshPro's vertices.
+- Bot looks are worked out in `src/Shared/BotLooks.cs`. The plugin and the editor compile the same file, so the editor's preview matches the game.
+- The editor reads the game's files with [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET). `src/NamePlate.Editor/Assets/classdata.tpk` is its class database, from [UABEA](https://github.com/nesrak1/UABEA) (MIT).
 
 ## Credits
 
-- Evgencheg - author
+- Evgencheg: the original Tarkov-Change-Icons
+- JoelHauser: Name Plate
 - Made with help from an AI coding assistant
 
 [MIT](LICENSE)

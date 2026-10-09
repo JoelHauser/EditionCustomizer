@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>NamePlate</AssemblyName>
+    <RootNamespace>NamePlate</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>Evgencheg</Authors>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <SptPath Condition="'$(SptPath)' == ''"></SptPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SPTushonka.Server.Core" Version="4.1.6" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <Target Name="CopyToServer" AfterTargets="Build" Condition="'$(SptPath)' != '' And Exists('$(SptPath)\user\mods')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(SptPath)\user\mods\$(AssemblyName)" />
+  </Target>
+</Project>

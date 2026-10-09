@@ -8,7 +8,7 @@ using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services.Commerce;
 
-namespace ChangeIcons;
+namespace NamePlate;
 
 [Injectable]
 public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveServer, MailSendService mailSendService) : ISptCommand

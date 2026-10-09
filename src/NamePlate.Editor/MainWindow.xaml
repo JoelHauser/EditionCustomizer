@@ -1,0 +1,537 @@
+<Window x:Class="NamePlate.Editor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:NamePlate.Editor"
+        Title="Name Plate" Width="1280" Height="840" MinWidth="1060" MinHeight="660"
+        WindowStartupLocation="CenterScreen" Icon="Assets/app.ico"
+        Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
+        FontFamily="{StaticResource Body}" FontSize="13" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <Grid Background="{StaticResource BgBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Background="{StaticResource BgBrush}" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="18,0">
+            <DockPanel Height="56">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image x:Name="Logo" Source="Assets/logo.png" Width="22" Height="22" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <TextBlock Text="Name Plate" FontFamily="{StaticResource Heading}" FontWeight="SemiBold" FontSize="15"
+                               Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" Margin="28,0,0,0" Height="56">
+                        <RadioButton x:Name="IconsTab" Style="{StaticResource Tab}" Content="Icons" GroupName="Page" IsChecked="True" />
+                        <RadioButton x:Name="BotsTab" Style="{StaticResource Tab}" Content="Bots" GroupName="Page" />
+                        <RadioButton x:Name="ProfileTab" Style="{StaticResource Tab}" Content="Profile" GroupName="Page" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,18,0" />
+                    <Button x:Name="SptButton" Style="{StaticResource GhostBtn}" Margin="0,0,14,0"/>
+                    <Button x:Name="SaveButton" Style="{StaticResource AccentBtn}" Content="Save" IsEnabled="False" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ============================================================ ICONS -->
+        <Grid x:Name="IconsPage" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="0,18,0,14">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Text="Your icons" Margin="22,0,0,10" />
+                    <UniformGrid DockPanel.Dock="Bottom" Columns="3" Margin="14,10,14,0">
+                        <Button x:Name="NewButton" Content="New" Margin="0,0,6,0" ToolTip="A new icon of your own" />
+                        <Button x:Name="CopyButton" Content="Duplicate" Margin="0,0,6,0" ToolTip="A new icon that starts as a copy of this one" />
+                        <Button x:Name="RemoveButton" Content="Remove" />
+                    </UniformGrid>
+                    <ListBox x:Name="IconList" Style="{StaticResource CleanList}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="46">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="36" Height="36">
+                                        <Image Source="{Binding Thumbnail}" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality" />
+                                    </Border>
+                                    <local:StyledName Grid.Column="1" Text="{Binding DisplayName}" Look="{Binding Look}" FontSize="14"
+                                                      Margin="12,0,6,0" VerticalAlignment="Center" ClipToBounds="True" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Tag}" Style="{StaticResource Caption}" FontSize="10.5" VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Live preview, laid out like the places the game shows it -->
+                <Border Margin="26,22,26,0" CornerRadius="8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="26,20">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1A1A1A" Offset="0" />
+                            <GradientStop Color="#141414" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.6*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Caption}" Text="Main menu" Margin="0,0,0,14" />
+                            <StackPanel Orientation="Horizontal">
+                                <Image x:Name="PreviewIcon" Width="34" Height="34" VerticalAlignment="Bottom" Margin="0,0,12,6" RenderOptions.BitmapScalingMode="HighQuality" />
+                                <StackPanel>
+                                    <TextBlock Text="YOUR MAIN CHARACTER" Style="{StaticResource Caption}" FontSize="11" />
+                                    <local:StyledName x:Name="PreviewName" FontSize="32" FontWeight="Bold" FontFamily="Bahnschrift" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="18,0,0,0">
+                            <TextBlock Style="{StaticResource Caption}" Text="Settings dropdown" Margin="0,0,0,14" />
+                            <Border x:Name="DropdownBox" Background="#1E2123" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="3" Padding="10,7">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="▾" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image x:Name="DropdownIcon" Width="16" Height="16" Margin="0,0,8,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <local:StyledName x:Name="DropdownName" FontSize="14" FontFamily="Segoe UI" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <ScrollViewer x:Name="EditorScroll" Grid.Row="1" Margin="26,16,10,16" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,0,16,0">
+
+                        <!-- NAME -->
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" x:Name="SlotText" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Name" Margin="0,0,24,0" VerticalAlignment="Center" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Name="NameBox" Width="300"
+                                             ToolTip="What the settings dropdown calls this icon. Your nickname itself stays as it is." />
+                                    <TextBlock Text="Tag" Margin="28,0,10,0" VerticalAlignment="Center" Foreground="{StaticResource SecondaryBrush}" />
+                                    <TextBox x:Name="TagBox" Width="110" Tag="None" MaxLength="5"
+                                             ToolTip="A clan tag before your name: [TAG] Nickname. Leave empty for none." />
+                                    <Button x:Name="RandomTagButton" Style="{StaticResource GhostBtn}" Content="Random" Margin="6,0,0,0"
+                                            ToolTip="Pick one from the bots' tag list" />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- NAME COLOR -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Button x:Name="GameColorButton" Style="{StaticResource GhostBtn}" Content="Use the game's color" />
+                                        <Button x:Name="CopyCodeButton" Style="{StaticResource GhostBtn}" Content="Copy code"
+                                                ToolTip="Copy this look as a code to share; anyone with the mod can paste it" />
+                                        <Button x:Name="PasteCodeButton" Style="{StaticResource GhostBtn}" Content="Paste code"
+                                                ToolTip="Give this icon a look from a code someone shared" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource CardTitle}" Text="Nickname color" />
+                                </DockPanel>
+
+                                <DockPanel Margin="0,0,0,14">
+                                    <ToggleButton x:Name="PresetsButton" DockPanel.Dock="Right" Style="{StaticResource Disclosure}" Content="Presets" ToolTip="Ready-made color sets" />
+                                    <Border Style="{StaticResource SegmentGroup}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="SolidMode" Style="{StaticResource Segment}" Content="One color" GroupName="Mode" />
+                                            <RadioButton x:Name="GradientMode" Style="{StaticResource Segment}" Content="Gradient" GroupName="Mode" />
+                                            <RadioButton x:Name="LettersMode" Style="{StaticResource Segment}" Content="Per letter" GroupName="Mode" />
+                                        </StackPanel>
+                                    </Border>
+                                </DockPanel>
+
+                                <WrapPanel x:Name="PresetPanel" Margin="0,0,0,8"
+                                           Visibility="{Binding IsChecked, ElementName=PresetsButton, Converter={StaticResource BoolToVis}}" />
+                                <WrapPanel x:Name="ColorChips" />
+
+                                <StackPanel x:Name="MultiPanel">
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <ToggleButton x:Name="AnimateSwitch" Style="{StaticResource Switch}" Content="Animate" />
+                                        <StackPanel Orientation="Horizontal" Visibility="{Binding IsChecked, ElementName=AnimateSwitch, Converter={StaticResource BoolToVis}}">
+                                            <Slider x:Name="SpeedSlider" Width="220" Minimum="0.05" Maximum="2" Value="0.4" Margin="20,0,10,0" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="SpeedText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Width="80" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel x:Name="MotionPanel" Orientation="Horizontal" Margin="0,12,0,0"
+                                                Visibility="{Binding IsChecked, ElementName=AnimateSwitch, Converter={StaticResource BoolToVis}}">
+                                        <Border Style="{StaticResource SegmentGroup}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <RadioButton x:Name="MotionScroll" Style="{StaticResource Segment}" Content="Scroll" GroupName="Motion" ToolTip="The colors travel along the name" />
+                                                <RadioButton x:Name="MotionPulse" Style="{StaticResource Segment}" Content="Pulse" GroupName="Motion" ToolTip="The whole name cycles through its colors" />
+                                                <RadioButton x:Name="MotionWave" Style="{StaticResource Segment}" Content="Wave" GroupName="Motion" ToolTip="The colors ripple" />
+                                                <RadioButton x:Name="MotionSparkle" Style="{StaticResource Segment}" Content="Sparkle" GroupName="Motion" ToolTip="Letters flash now and then" />
+                                                <RadioButton x:Name="MotionRainbow" Style="{StaticResource Segment}" Content="Rainbow" GroupName="Motion" ToolTip="Every color in turn, sweeping across the name" />
+                                                <RadioButton x:Name="MotionGlitch" Style="{StaticResource Segment}" Content="Glitch" GroupName="Motion" ToolTip="Letters jump aside and flash now and then" />
+                                                <RadioButton x:Name="MotionBounce" Style="{StaticResource Segment}" Content="Bounce" GroupName="Motion" ToolTip="Letters hop up one after another" />
+                                            </StackPanel>
+                                        </Border>
+                                        <ToggleButton x:Name="ReverseSwitch" Style="{StaticResource Switch}" Content="Reverse" Margin="20,0,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Style="{StaticResource Caption}" Text="Effects" Margin="0,18,0,8" />
+                                <WrapPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,24,8">
+                                        <ToggleButton x:Name="OutlineSwitch" Style="{StaticResource Switch}" Content="Outline" />
+                                        <Button x:Name="OutlineChip" Width="32" Height="22" MinHeight="22" Margin="10,0,0,0" Padding="0" ToolTip="Outline color" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,24,8">
+                                        <ToggleButton x:Name="GlowSwitch" Style="{StaticResource Switch}" Content="Glow" />
+                                        <Button x:Name="GlowChip" Width="32" Height="22" MinHeight="22" Margin="10,0,0,0" Padding="0" ToolTip="Glow color" />
+                                    </StackPanel>
+                                    <ToggleButton x:Name="ShadowSwitch" Style="{StaticResource Switch}" Content="Shadow" Margin="0,0,28,8"
+                                                  ToolTip="A drop shadow. The game draws glow and shadow on one layer, so it's one or the other." />
+                                    <ToggleButton x:Name="ItalicToggle" Style="{StaticResource ChipToggle}" Content="Italic" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ICON -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Icon" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="170" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+                                        <Border Width="140" Height="140" CornerRadius="8" Background="{StaticResource IconTileBrush}"
+                                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" HorizontalAlignment="Left">
+                                            <Image x:Name="BigIcon" Width="96" Height="96" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Border>
+                                        <TextBlock x:Name="IconSourceText" Style="{StaticResource Hint}" Margin="0,8,12,0" />
+                                        <ToggleButton x:Name="TintSwitch" Style="{StaticResource Switch}" Content="Recolor" Margin="0,14,0,0" />
+                                        <Button x:Name="TintChip" Width="140" Height="30" Margin="0,8,0,0" HorizontalAlignment="Left" Padding="0" />
+                                        <Button x:Name="OwnIconButton" Content="Use the game's icon" Margin="0,10,0,0" Width="140" HorizontalAlignment="Left" />
+                                    </StackPanel>
+
+                                    <DockPanel Grid.Column="1">
+                                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                            <Border Style="{StaticResource SegmentGroup}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <RadioButton x:Name="LibraryTab" Style="{StaticResource Segment}" Content="Icons" GroupName="Gallery" IsChecked="True"
+                                                             ToolTip="The game's edition icons and the icon library" />
+                                                <RadioButton x:Name="AnimatedTab" Style="{StaticResource Segment}" Content="Animated" GroupName="Gallery"
+                                                             ToolTip="Icons that move: strips of frames, from the library and your images" />
+                                                <RadioButton x:Name="MineTab" Style="{StaticResource Segment}" Content="Your images" GroupName="Gallery"
+                                                             ToolTip="PNGs you put in BepInEx\plugins\NamePlate\icons (square ones look best)" />
+                                                <RadioButton x:Name="GameTab" Style="{StaticResource Segment}" Content="Game files" GroupName="Gallery"
+                                                             ToolTip="Every small image in the game's files, to borrow one" />
+                                            </StackPanel>
+                                            </Border>
+                                        </DockPanel>
+                                        <StackPanel x:Name="GameBar" DockPanel.Dock="Top" Margin="0,0,0,10">
+                                            <TextBox x:Name="SearchBox" Tag="Search by name" FontSize="13" />
+                                            <DockPanel Margin="0,8,0,0">
+                                                <Button x:Name="RereadButton" DockPanel.Dock="Right" Style="{StaticResource GhostBtn}" Content="Read again" ToolTip="Read the images from the game again (after a game update)" />
+                                                <ToggleButton x:Name="LargeSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" Content="Big images" Margin="0,0,16,0" />
+                                                <TextBlock x:Name="GameCountText" Style="{StaticResource Hint}" VerticalAlignment="Center" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                        <ListBox x:Name="Gallery" Style="{StaticResource Gallery}" Height="316" />
+                                    </DockPanel>
+                                </Grid>
+
+                                <WrapPanel Margin="0,16,0,0">
+                                    <StackPanel Margin="0,0,28,8">
+                                        <TextBlock Style="{StaticResource Caption}" Text="Icon effect" Margin="0,0,0,6" />
+                                        <Border Style="{StaticResource SegmentGroup}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <RadioButton x:Name="EffectNone" Style="{StaticResource Segment}" Content="None" GroupName="IconEffect" />
+                                                <RadioButton x:Name="EffectPulse" Style="{StaticResource Segment}" Content="Pulse" GroupName="IconEffect" ToolTip="Grows and shrinks a little" />
+                                                <RadioButton x:Name="EffectGlow" Style="{StaticResource Segment}" Content="Glow" GroupName="IconEffect" ToolTip="A soft halo behind it, in the name's color" />
+                                                <RadioButton x:Name="EffectFlip" Style="{StaticResource Segment}" Content="Flip" GroupName="IconEffect" ToolTip="Turns like a coin" />
+                                                <RadioButton x:Name="EffectFloat" Style="{StaticResource Segment}" Content="Float" GroupName="IconEffect" ToolTip="Bobs up and down" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,28,8">
+                                        <TextBlock Style="{StaticResource Caption}" Text="Prestige badge" Margin="0,0,0,6" />
+                                        <Border Style="{StaticResource SegmentGroup}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <RadioButton x:Name="PrestigeGame" Style="{StaticResource Segment}" Content="The game's" GroupName="Prestige" />
+                                                <RadioButton x:Name="PrestigeHide" Style="{StaticResource Segment}" Content="Hidden" GroupName="Prestige" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel x:Name="FpsPanel" Margin="0,0,0,8">
+                                        <TextBlock x:Name="FpsCaption" Style="{StaticResource Caption}" Text="Animated" Margin="0,0,0,6" />
+                                        <StackPanel Orientation="Horizontal" Height="36">
+                                            <Slider x:Name="FpsSlider" Width="160" Minimum="2" Maximum="24" Value="8" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="FpsText" Foreground="{StaticResource MutedBrush}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+
+        <!-- ============================================================ BOTS -->
+        <Grid x:Name="BotsPage" Grid.Row="1" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="430" />
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer Margin="26,22,10,16" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,16,0">
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="PMC bots" />
+                            <ToggleButton x:Name="BotsSwitch" Style="{StaticResource Switch}" Content="Give PMC bots their own icon and name colors" />
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0"
+                                        Visibility="{Binding IsChecked, ElementName=BotsSwitch, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Share of PMCs" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="ShareSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="ShareText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                                        Visibility="{Binding IsChecked, ElementName=BotsSwitch, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Clan tags" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="TagSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="TagText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <ToggleButton x:Name="FactionSwitch" Style="{StaticResource Switch}" Margin="0,14,0,0" Content="Faction colors: warm for BEAR, cool for USEC"
+                                          Visibility="{Binding IsChecked, ElementName=BotsSwitch, Converter={StaticResource BoolToVis}}"
+                                          ToolTip="Where the game says a bot's side: the death screen, the kill list and dogtags. Flea sellers have no side." />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0" Text="Worked out from each bot's name, so a name looks the same in every raid."
+                                       ToolTip="Shows on the death screen, the kill list, dogtags and flea sellers. Works with Bot Callsigns Reloaded and Realistic PMC Names: they only decide which names bots get." />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Visibility="{Binding IsChecked, ElementName=BotsSwitch, Converter={StaticResource BoolToVis}}">
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Name colors" />
+                            <WrapPanel>
+                                <ToggleButton x:Name="BotSolid" Style="{StaticResource ChipToggle}" Content="One color" />
+                                <ToggleButton x:Name="BotGradient" Style="{StaticResource ChipToggle}" Content="Gradient" />
+                                <ToggleButton x:Name="BotLetters" Style="{StaticResource ChipToggle}" Content="Per letter" />
+                            </WrapPanel>
+                            <DockPanel Margin="0,14,0,8">
+                                <ToggleButton x:Name="BotPresetsToggle" DockPanel.Dock="Right" Style="{StaticResource Disclosure}" Content="Choose" />
+                                <TextBlock Style="{StaticResource Caption}" Text="Presets" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotPresetCount" Style="{StaticResource Hint}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <StackPanel Visibility="{Binding IsChecked, ElementName=BotPresetsToggle, Converter={StaticResource BoolToVis}}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,6">
+                                    <Button x:Name="BotPresetsAll" Style="{StaticResource GhostBtn}" Content="All" />
+                                    <Button x:Name="BotPresetsNone" Style="{StaticResource GhostBtn}" Content="None" />
+                                </StackPanel>
+                                <WrapPanel x:Name="BotPresetPanel" />
+                            </StackPanel>
+                            <ToggleButton x:Name="BotRandomColors" Style="{StaticResource Switch}" Content="Make up colors too, not only presets" Margin="0,8,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                <TextBlock Text="Animated names" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="BotAnimateSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotAnimateText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <TextBlock Text="Fastest animation" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="BotSpeedSlider" Width="260" Minimum="0.1" Maximum="2" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotSpeedText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Caption}" Text="Animations" Margin="0,16,0,8"
+                                       ToolTip="Each moving name picks one, and may run it in reverse. One-color names can wave or sparkle." />
+                            <WrapPanel>
+                                <ToggleButton x:Name="BotMotionScroll" Style="{StaticResource ChipToggle}" Content="Scroll" Tag="scroll" />
+                                <ToggleButton x:Name="BotMotionPulse" Style="{StaticResource ChipToggle}" Content="Pulse" Tag="pulse" />
+                                <ToggleButton x:Name="BotMotionWave" Style="{StaticResource ChipToggle}" Content="Wave" Tag="wave" />
+                                <ToggleButton x:Name="BotMotionSparkle" Style="{StaticResource ChipToggle}" Content="Sparkle" Tag="sparkle" />
+                                <ToggleButton x:Name="BotMotionRainbow" Style="{StaticResource ChipToggle}" Content="Rainbow" Tag="rainbow" />
+                                <ToggleButton x:Name="BotMotionGlitch" Style="{StaticResource ChipToggle}" Content="Glitch" Tag="glitch" />
+                                <ToggleButton x:Name="BotMotionBounce" Style="{StaticResource ChipToggle}" Content="Bounce" Tag="bounce" />
+                            </WrapPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                <TextBlock Text="Name effects" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="BotEffectSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotEffectText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <WrapPanel Margin="0,10,0,0">
+                                <ToggleButton x:Name="BotFxOutline" Style="{StaticResource ChipToggle}" Content="Outline" Tag="outline" />
+                                <ToggleButton x:Name="BotFxGlow" Style="{StaticResource ChipToggle}" Content="Glow" Tag="glow" />
+                                <ToggleButton x:Name="BotFxShadow" Style="{StaticResource ChipToggle}" Content="Shadow" Tag="shadow" />
+                                <ToggleButton x:Name="BotFxBold" Style="{StaticResource ChipToggle}" Content="Bold" Tag="bold" />
+                                <ToggleButton x:Name="BotFxItalic" Style="{StaticResource ChipToggle}" Content="Italic" Tag="italic" />
+                                <ToggleButton x:Name="BotFxCaps" Style="{StaticResource ChipToggle}" Content="Small caps" Tag="smallcaps" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button x:Name="BotIconsAll" Style="{StaticResource GhostBtn}" Content="All" />
+                                    <Button x:Name="BotIconsNone" Style="{StaticResource GhostBtn}" Content="None" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="Icons" />
+                            </DockPanel>
+                            <TextBlock x:Name="BotIconCount" Style="{StaticResource Hint}" Margin="0,0,0,10" />
+                            <ListBox x:Name="BotIconGallery" Style="{StaticResource PoolGallery}" SelectionMode="Multiple" Height="236" />
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                <TextBlock Text="Icon effects" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="BotIconFxSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="BotIconFxText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <WrapPanel Margin="0,10,0,0">
+                                <ToggleButton x:Name="BotIconFxPulse" Style="{StaticResource ChipToggle}" Content="Pulse" Tag="pulse" />
+                                <ToggleButton x:Name="BotIconFxGlow" Style="{StaticResource ChipToggle}" Content="Glow" Tag="glow" />
+                                <ToggleButton x:Name="BotIconFxFlip" Style="{StaticResource ChipToggle}" Content="Flip" Tag="flip" />
+                                <ToggleButton x:Name="BotIconFxFloat" Style="{StaticResource ChipToggle}" Content="Float" Tag="float" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Column="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+                <DockPanel Margin="22,22,22,16">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Text="Death screen" Margin="0,0,0,8" />
+                    <Border DockPanel.Dock="Top" CornerRadius="8" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="20,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#221A1A" Offset="0" />
+                                <GradientStop Color="#151515" Offset="1" />
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel>
+                            <TextBlock Text="KILLED BY" Style="{StaticResource Caption}" FontSize="11" Foreground="#B0655A" />
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                <Image x:Name="KillerIcon" Width="30" Height="30" Margin="0,0,10,0" VerticalAlignment="Center" />
+                                <local:StyledName x:Name="KillerName" FontSize="28" FontWeight="Bold" FontFamily="Bahnschrift" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock x:Name="KillerNote" Style="{StaticResource Hint}" Margin="0,6,0,0" FontSize="11" />
+                        </StackPanel>
+                    </Border>
+                    <TextBox DockPanel.Dock="Top" x:Name="TryNameBox" Tag="Try any bot name" Margin="0,12,0,0" />
+                    <DockPanel DockPanel.Dock="Top" Margin="0,18,0,4">
+                        <Button DockPanel.Dock="Right" x:Name="ShuffleButton" Style="{StaticResource GhostBtn}" Content="Shuffle" />
+                        <TextBlock Style="{StaticResource Caption}" Text="Names from your raids" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <TextBlock DockPanel.Dock="Top" x:Name="NameSourceText" Style="{StaticResource Hint}" Margin="0,0,0,8" />
+                    <ListBox x:Name="BotSampleList" Style="{StaticResource CleanList}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Height="34">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Tag}" Style="{StaticResource Caption}" FontSize="10.5" VerticalAlignment="Center" />
+                                    <Image Source="{Binding Thumbnail}" Width="20" Height="20" StretchDirection="DownOnly" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
+                                    <local:StyledName Text="{Binding DisplayName}" Look="{Binding Look}" FontSize="16" VerticalAlignment="Center" />
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ PROFILE -->
+        <Grid x:Name="ProfilePage" Grid.Row="1" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="0,18,0,14">
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Text="Characters" Margin="22,0,0,10" />
+                    <ListBox x:Name="ProfileList" Style="{StaticResource CleanList}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="{Binding Thumbnail}" Width="18" Height="18" StretchDirection="DownOnly" Margin="0,0,8,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <local:StyledName Text="{Binding Title}" Look="{Binding Look}" FontSize="16" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Hint}" Margin="0,3,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <ScrollViewer Grid.Column="1" Margin="26,22,10,16" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,16,0">
+                    <Border x:Name="ServerPill" CornerRadius="16" Padding="14,7" HorizontalAlignment="Left" Margin="0,0,0,16" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="ServerDot" Width="9" Height="9" Margin="0,0,9,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="ServerText" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Icons this character has" />
+                            <WrapPanel x:Name="OwnedPanel" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Shown next to the name" />
+                            <WrapPanel x:Name="ShownPanel" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Your scav" />
+                            <ToggleButton x:Name="ScavSwitch" Style="{StaticResource Switch}" Content="Show my scav's name with my look" />
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="Saved with Save at the top, like your icons." />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="ApplyProfileButton" Style="{StaticResource AccentBtn}" Content="Save to character" />
+                        <TextBlock x:Name="ProfileNote" Style="{StaticResource Hint}" Margin="16,0,0,0" MaxWidth="560" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Busy overlay while reading the game's files -->
+        <Border x:Name="BusyOverlay" Grid.RowSpan="2" Background="#E00B0C0D" Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Reading the game's icons" FontFamily="{StaticResource Heading}" FontWeight="SemiBold" FontSize="18"
+                           Foreground="{StaticResource TextBrush}" HorizontalAlignment="Center" />
+                <TextBlock x:Name="BusyText" Style="{StaticResource Hint}" HorizontalAlignment="Center" Margin="0,8,0,0" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
