@@ -108,7 +108,10 @@ public class NameColorizer : MonoBehaviour
 
     private void Clear()
     {
+        // The category goes too: the label may show someone else now, and a reload of
+        // icons.json (RefreshAll) would otherwise put that category's colors back on it
         _style = null;
+        _category = null;
         Unsubscribe();
         if (_text != null)
         {

@@ -72,7 +72,8 @@ public class IconsFile
 
     public class Entry
     {
-        [JsonPropertyName("category")] public string Category { get; set; } = "";
+        // "2048" or 2048: the plugin reads either
+        [JsonPropertyName("category"), JsonConverter(typeof(StringOrNumber))] public string Category { get; set; } = "";
         [JsonPropertyName("name")] public string? Name { get; set; }
         [JsonPropertyName("color")] public string? Color { get; set; }
         [JsonPropertyName("colors")] public List<string>? Colors { get; set; }
@@ -100,7 +101,21 @@ public class IconsFile
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+
+        // The plugin's reader takes "animate": "0.5"; so must this, or it rejects a file the game reads
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
     };
+
+    /// <summary>A string, or a number read as its text. Written back as a string.</summary>
+    private class StringOrNumber : JsonConverter<string>
+    {
+        public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+            reader.TokenType == JsonTokenType.Number
+                ? System.Text.Encoding.UTF8.GetString(reader.ValueSpan)
+                : reader.GetString() ?? "";
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
+    }
 
     public static IconsFile Load(string path) =>
         System.IO.File.Exists(path) ? JsonSerializer.Deserialize<IconsFile>(System.IO.File.ReadAllText(path), Options) ?? new() : new();
@@ -116,7 +131,7 @@ public class IconsFile
         var icon = new EditableIcon
         {
             Value = value, Name = entry.Name, Animate = entry.Animate ?? 0,
-            Motion = string.IsNullOrEmpty(entry.Motion) ? Shared.Motions.Scroll : entry.Motion,
+            Motion = string.IsNullOrEmpty(entry.Motion) ? Shared.Motions.Scroll : entry.Motion.Trim().ToLowerInvariant(),
             Reverse = entry.Reverse ?? false,
         };
 

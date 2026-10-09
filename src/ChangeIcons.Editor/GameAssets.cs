@@ -276,9 +276,11 @@ public class GameAssets
 
                 return (rows, priority);
             }
-            catch (ArgumentOutOfRangeException)
+            catch (ArgumentException)
             {
-                // Layout changed in a game update; the editor falls back to its own names
+                // Layout changed in a game update; the editor falls back to its own names.
+                // (Reading past the end throws ArgumentOutOfRangeException, or part way past it a
+                // plain ArgumentException from BitConverter.)
             }
         }
 

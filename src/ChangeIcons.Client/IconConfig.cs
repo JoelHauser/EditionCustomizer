@@ -93,8 +93,9 @@ public class IconEntry
 /// </summary>
 public class BotConfig
 {
+    /// <summary>On unless set to false, the same as the editor reads it.</summary>
     [JsonProperty("enabled")]
-    public bool Enabled;
+    public bool Enabled = true;
 
     /// <summary>Percent of PMC bots that get a look.</summary>
     [JsonProperty("share")]

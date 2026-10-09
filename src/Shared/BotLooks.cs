@@ -379,8 +379,15 @@ namespace ChangeIcons.Shared
             _colors = colors != null && colors.Length > 0 ? colors : new[] { new[] { 1.0, 1.0, 1.0 } };
             _letters = letters;
             _speed = Math.Max(0, speed);
-            _motion = _speed > 0 ? (string.IsNullOrEmpty(motion) ? Motions.Scroll : motion) : null;
+            _motion = _speed > 0 ? (string.IsNullOrEmpty(motion) ? Motions.Scroll : motion.Trim().ToLowerInvariant()) : null;
             _sign = reverse ? -1 : 1;
+
+            // A motion this doesn't know would draw still yet count as moving, and the plugin
+            // would recolor the name every frame for nothing
+            if (_motion != null && Array.IndexOf(Motions.All, _motion) < 0)
+            {
+                _motion = null;
+            }
 
             // Scroll and pulse have nothing to move between on one color
             if (_colors.Length < 2 && (_motion == Motions.Scroll || _motion == Motions.Pulse))

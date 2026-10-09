@@ -31,6 +31,13 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<ProfileItem> _profileItems = [];
     private readonly DispatcherTimer _serverTimer = new() { Interval = TimeSpan.FromSeconds(1.5) };
     private IconsFile _file = new();
+
+    // Entries in icons.json the editor can't show (a category it doesn't know). Written back as
+    // they were: the plugin may still read them, and dropping them would lose someone's work.
+    private readonly List<IconsFile.Entry> _kept = [];
+
+    // icons.json is copied to backups\ before this window first saves over it
+    private bool _backedUp;
     private CancellationTokenSource? _thumbLoad;
     private string _nickname = "Nickname";
     private bool _loading;
@@ -210,15 +217,37 @@ public partial class MainWindow : Window
     private void LoadIcons()
     {
         var icons = new List<EditableIcon>();
+        _kept.Clear();
         try
         {
             _file = IconsFile.Load(_iconsJson);
-            icons.AddRange(_file.Icons.Select(IconsFile.ToEditable));
         }
-        catch (Exception e) when (e is System.Text.Json.JsonException or FormatException or IOException)
+        catch (Exception e) when (e is System.Text.Json.JsonException or IOException)
         {
-            MessageBox.Show(this, $"Couldn't read icons.json, starting fresh.\n\n{e.Message}", Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, $"Couldn't read icons.json, starting fresh. Saving keeps a copy of the old one in {Path.Combine(_pluginFolder, "backups")}.\n\n{e.Message}",
+                Title, MessageBoxButton.OK, MessageBoxImage.Warning);
             _file = new IconsFile();
+        }
+
+        // One entry the editor can't read costs that entry, not the file
+        foreach (var entry in _file.Icons)
+        {
+            try
+            {
+                icons.Add(IconsFile.ToEditable(entry));
+            }
+            catch (FormatException)
+            {
+                _kept.Add(entry);
+            }
+        }
+
+        if (_kept.Count > 0)
+        {
+            MessageBox.Show(this,
+                $"icons.json has {_kept.Count} icon(s) this editor can't show: {string.Join(", ", _kept.Select(k => $"\"{k.Category}\""))}.\n\n"
+                + "They're kept in the file as they are when you save.",
+                Title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         foreach (var value in Categories.WithIcons.Where(v => icons.All(i => i.Value != v)))
@@ -809,8 +838,10 @@ public partial class MainWindow : Window
                 file.Icons.Add(IconsFile.FromEditable(icon, baked));
             }
 
+            file.Icons.AddRange(_kept);
             file.Bots = _bots;
             Directory.CreateDirectory(_pluginFolder);
+            BackUpIconsJson();
             file.Save(_iconsJson);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -824,6 +855,27 @@ public partial class MainWindow : Window
         SaveButton.IsEnabled = false;
         SetStatus($"Saved {DateTime.Now:HH:mm}. A running game picks it up when you reopen a screen.");
         return true;
+    }
+
+    // The icons.json this window opened, copied before the first save replaces it
+    private void BackUpIconsJson()
+    {
+        if (_backedUp || !File.Exists(_iconsJson))
+        {
+            return;
+        }
+
+        var folder = Path.Combine(_pluginFolder, "backups");
+        Directory.CreateDirectory(folder);
+        var stamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        var backup = Path.Combine(folder, $"icons.json.{stamp}");
+        for (var n = 2; File.Exists(backup); n++)
+        {
+            backup = Path.Combine(folder, $"icons.json.{stamp}_{n}");
+        }
+
+        File.Copy(_iconsJson, backup);
+        _backedUp = true;
     }
 
     private void MarkDirty()

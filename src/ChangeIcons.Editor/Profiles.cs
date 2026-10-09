@@ -81,7 +81,14 @@ public class Profiles(string sptPath, string backupFolder)
         var info = root["characters"]?["pmc"]?["Info"] as JsonObject ?? throw new InvalidDataException("The profile has no character yet");
 
         // Copy the original before touching it
-        var backupDir = System.IO.Path.Combine(backupFolder, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+        // Two saves in the same second get folders of their own
+        var stamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        var backupDir = System.IO.Path.Combine(backupFolder, stamp);
+        for (var n = 2; File.Exists(System.IO.Path.Combine(backupDir, System.IO.Path.GetFileName(profile.Path))); n++)
+        {
+            backupDir = System.IO.Path.Combine(backupFolder, $"{stamp}_{n}");
+        }
+
         Directory.CreateDirectory(backupDir);
         var backup = System.IO.Path.Combine(backupDir, System.IO.Path.GetFileName(profile.Path));
         File.Copy(profile.Path, backup);
