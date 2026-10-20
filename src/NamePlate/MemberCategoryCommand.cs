@@ -5,13 +5,15 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Dialog;
 using SPTarkov.Server.Core.Models.Eft.Profile;
 using SPTarkov.Server.Core.Models.Enums;
+using SPTarkov.Server.Core.Models.Spt.Mod;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services.Commerce;
 
 namespace NamePlate;
 
 [Injectable]
-public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveServer, MailSendService mailSendService) : ISptCommand
+public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveServer, MailSendService mailSendService, IReadOnlyList<SptMod> loadedMods)
+    : ISptCommand
 {
     // These turn the account into a service one and break the profile
     private const MemberCategory Blocked =
@@ -28,13 +30,13 @@ public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveS
 
     private static readonly MemberCategory Allowed = (Builtin & ~Blocked) | Custom;
 
-    public string Command => "membercategory";
+    public string Command => CommandName.For(loadedMods);
 
     public string CommandHelp =>
-        "spt membercategory\n========\nChanges the icons on your account.\n\n"
-        + "\tspt membercategory\n\t\tWhat you have now\n\n"
-        + "\tspt membercategory list\n\t\tWhat you can add\n\n"
-        + "\tspt membercategory [number | names]\n\t\tEx: spt membercategory 1026\n\t\tEx: spt membercategory unheard+uniqueid\n\t\tEx: spt membercategory unheard+uniqueid+2048";
+        $"spt {Command}\n========\nChanges the icons on your account.\n\n"
+        + $"\tspt {Command}\n\t\tWhat you have now\n\n"
+        + $"\tspt {Command} list\n\t\tWhat you can add\n\n"
+        + $"\tspt {Command} [number | names]\n\t\tEx: spt {Command} 1026\n\t\tEx: spt {Command} unheard+uniqueid\n\t\tEx: spt {Command} unheard+uniqueid+2048";
 
     public async ValueTask<string> PerformAction(UserDialogInfo commandHandler, MongoId sessionId, SendMessageRequest request)
     {
@@ -57,7 +59,7 @@ public class MemberCategoryCommand(ProfileHelper profileHelper, SaveServer saveS
         }
         else if (!TryParse(args, out var value) || (value & ~Allowed) != 0)
         {
-            reply = "That can't be set. Type 'spt membercategory list' to see what you can add.";
+            reply = $"That can't be set. Type 'spt {Command} list' to see what you can add.";
         }
         else
         {

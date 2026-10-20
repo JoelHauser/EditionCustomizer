@@ -2,6 +2,7 @@ using System.Text;
 using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
+using SPTarkov.Server.Core.Models.Spt.Mod;
 using Spectre.Console;
 
 namespace NamePlate;
@@ -16,7 +17,7 @@ namespace NamePlate;
 /// loaded" line. If drawing fails for any reason, one plain line goes through the logger instead.
 /// </summary>
 [Injectable(TypePriority = OnLoadOrder.PostLoad + 1)]
-public class StartupBanner(ISptLogger<StartupBanner> logger) : IOnLoad
+public class StartupBanner(ISptLogger<StartupBanner> logger, IReadOnlyList<SptMod> loadedMods) : IOnLoad
 {
     private static readonly (byte R, byte G, byte B)[] Rainbow =
     [
@@ -35,6 +36,12 @@ public class StartupBanner(ISptLogger<StartupBanner> logger) : IOnLoad
         catch (Exception)
         {
             logger.Info($"Name Plate {version} loaded" + (pluginFound ? "" : " (game plugin not found next to this server)"));
+        }
+
+        if (CommandName.Taken(loadedMods) is { } other)
+        {
+            logger.Warning($"Name Plate: {other.Name} is installed too and has 'spt {CommandName.Default}', so Name Plate's chat command is "
+                + $"'spt {CommandName.Fallback}'. Name Plate does everything {other.Name} does; you can remove {other.Name}.");
         }
 
         return Task.CompletedTask;

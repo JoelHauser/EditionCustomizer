@@ -218,11 +218,28 @@ public partial class MainWindow : Window
             await ReadGame();
         }
 
-        _nickname = _profiles.List().FirstOrDefault(p => p.HasCharacter)?.Nickname ?? "Nickname";
+        // Each part on its own: one that fails (a profile or another mod's file the editor
+        // doesn't expect) costs that part, not the editor
+        StartStep("your profiles", () => _nickname = _profiles.List().FirstOrDefault(p => p.HasCharacter)?.Nickname ?? "Nickname");
         SetStatus("");
-        LoadIcons();
-        LoadBots();
-        ShowGallery();
+        StartStep("icons.json", LoadIcons);
+        StartStep("the bot settings", LoadBots);
+        StartStep("the icon gallery", ShowGallery);
+    }
+
+    private void StartStep(string what, Action step)
+    {
+        try
+        {
+            step();
+        }
+        catch (Exception e)
+        {
+            App.WriteCrash(e);
+            MessageBox.Show(this, $"Couldn't load {what}; the rest of the editor works.\n\n{e.GetType().Name}: {e.Message}\n\n"
+                + $"The details are in {App.CrashLogPath}. Please attach that file to a bug report.",
+                Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     // ---------------------------------------------------------------- Reading the game
@@ -265,8 +282,9 @@ public partial class MainWindow : Window
         {
             _file = IconsFile.Load(_iconsJson);
         }
-        catch (Exception e) when (e is System.Text.Json.JsonException or IOException)
+        catch (Exception e)
         {
+            App.WriteCrash(e);
             MessageBox.Show(this, $"Couldn't read icons.json, starting fresh. Saving keeps a copy of the old one in {Path.Combine(_pluginFolder, "backups")}.\n\n{e.Message}",
                 Title, MessageBoxButton.OK, MessageBoxImage.Warning);
             _file = new IconsFile();
@@ -825,7 +843,8 @@ public partial class MainWindow : Window
             image.Freeze();
             return all ? image : Images.FirstFrame(image);
         }
-        catch (Exception e) when (e is IOException or NotSupportedException or FileFormatException or ArgumentException)
+        catch (Exception e) when (e is IOException or NotSupportedException or FileFormatException or ArgumentException
+                                   or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
         {
             return null;
         }

@@ -84,7 +84,7 @@ public static class BotNames
                 ? element.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToList()
                 : [];
         }
-        catch (Exception e) when (e is JsonException or IOException)
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
             return [];
         }

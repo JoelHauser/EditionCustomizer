@@ -75,7 +75,7 @@ public class GameAssets
         {
             _index = File.Exists(path) ? JsonSerializer.Deserialize<Index>(File.ReadAllText(path)) : null;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException or NotSupportedException)
         {
             _index = null;
         }

@@ -103,7 +103,8 @@ Name Plate is the same mod under a new name.
 1. Move `icons.json`, and any PNGs of your own, from `BepInEx/plugins/ChangeIcons` into `BepInEx/plugins/NamePlate`.
 2. Delete `BepInEx/plugins/ChangeIcons`, `SPT_Runtime/user/mods/ChangeIcons` and `ChangeIcons Editor.exe`.
 
-If the old copy is still there, the game and server load only one of the two and log why.
+If the old copy is still there, the game loads only one of the two and logs why. The server loads
+both, and Name Plate's chat command becomes `spt nameplate` (see below).
 
 ### Uninstallation
 
@@ -123,6 +124,10 @@ The editor's Profile page does this for you, but the server mod also takes chat 
 
 Restart the game fully after a change. Trader, Group, System and other service flags can't be set,
 because they break the profile.
+
+With Evgencheg's original ChangeIcons installed too (it has `spt membercategory` as well), the
+command is `spt nameplate` instead, and the server log says so. Name Plate does everything
+ChangeIcons does, so you can remove ChangeIcons.
 
 ## Compatibility
 

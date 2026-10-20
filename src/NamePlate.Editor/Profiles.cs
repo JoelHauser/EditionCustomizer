@@ -48,9 +48,9 @@ public class Profiles(string sptPath, string backupFolder)
                     Int(pmcInfo, "MemberCategory"),
                     Int(pmcInfo, "SelectedMemberCategory")));
             }
-            catch (Exception e) when (e is JsonException or IOException)
+            catch (Exception e) when (e is JsonException or IOException or FormatException or UnauthorizedAccessException)
             {
-                // Not a profile, or being written; leave it out
+                // Not a profile, being written, or with fields other mods changed; leave it out
             }
         }
 

@@ -28,7 +28,8 @@ public static class Images
                 image = new FormatConvertedBitmap(decoder.Frames[0], PixelFormats.Bgra32, null, 0);
                 image.Freeze();
             }
-            catch (Exception e) when (e is NotSupportedException or FileFormatException or IOException or ArgumentException)
+            catch (Exception e) when (e is NotSupportedException or FileFormatException or IOException or ArgumentException
+                                       or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
             {
                 image = null;
             }
@@ -82,7 +83,7 @@ public static class Images
             var height = header[20] << 24 | header[21] << 16 | header[22] << 8 | header[23];
             return height > 0 && width >= 2 * height && width % height == 0;
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             return false;
         }

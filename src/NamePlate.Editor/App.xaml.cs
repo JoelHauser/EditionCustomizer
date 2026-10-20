@@ -13,8 +13,27 @@ public partial class App : Application
     private static string SettingsPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Name Plate", "settings.json");
 
+    /// <summary>Where an error the editor didn't expect is written down, to attach to a bug report.</summary>
+    public static string CrashLogPath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Name Plate", "crash.log");
+
+    private static bool _crashShown;
+
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Without these an unexpected error closes the window with no message and nothing in any log
+        DispatcherUnhandledException += (_, args) =>
+        {
+            Crashed(args.Exception, fatal: false);
+            args.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) => Crashed(args.ExceptionObject as Exception, fatal: true);
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            WriteCrash(args.Exception);
+            args.SetObserved();
+        };
+
         base.OnStartup(e);
 
         var sptPath = FindSpt(e.Args) ?? PickSpt(null);
@@ -116,6 +135,40 @@ public partial class App : Application
         catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
             return null;
+        }
+    }
+
+    // The editor keeps running after an error on the UI thread; the message shows once, every
+    // error goes in the log
+    private static void Crashed(Exception? e, bool fatal)
+    {
+        var written = WriteCrash(e);
+        if (_crashShown && !fatal)
+        {
+            return;
+        }
+
+        _crashShown = true;
+        var where = written ? $"The details are in:\n{CrashLogPath}\n\nPlease attach that file to a bug report." : "";
+        MessageBox.Show(
+            (fatal ? "Name Plate hit an error and has to close.\n\n" : "Name Plate hit an error. Some of the editor may not work until you restart it.\n\n")
+            + $"{e?.GetType().Name}: {e?.Message}\n\n{where}",
+            "Name Plate", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    public static bool WriteCrash(Exception? e)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(CrashLogPath)!);
+            var version = typeof(App).Assembly.GetName().Version;
+            File.AppendAllText(CrashLogPath,
+                $"==== {DateTime.Now:yyyy-MM-dd HH:mm:ss} Name Plate editor {version}, {Environment.OSVersion}, .NET {Environment.Version}\n{e}\n\n");
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
 
