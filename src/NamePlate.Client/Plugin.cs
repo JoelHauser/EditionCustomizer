@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace NamePlate.Client;
 
-[BepInPlugin("com.mybutthasarash.nameplate", "Name Plate", "1.0.0")]
+[BepInPlugin("com.mybutthasarash.nameplate", "Name Plate", "1.0.1")]
 // This mod before it was renamed (Edition Customizer / ChangeIcons): both copies would patch the same
 // things, so BepInEx loads only one and says why
 [BepInIncompatibility("com.mybutthasarash.editioncustomizer")]
