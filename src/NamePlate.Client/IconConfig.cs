@@ -22,16 +22,30 @@ public class IconConfig
     [JsonProperty("bots")]
     public BotConfig Bots;
 
-    /// <summary>Your scav's name gets your look too (the game counts it as someone else).</summary>
+    /// <summary>Your scav's name gets your Name Plate too (the game counts it as someone else).</summary>
     [JsonProperty("scavLook")]
     public bool ScavLook;
 
     /// <summary>
-    /// Other players on your server who run the mod (Fika) see your look; off, they see the
-    /// game's. Theirs show for you either way.
+    /// Name Plate sharing: other players on your server who run the mod (Fika) see your Name Plate;
+    /// off, they see the game's. Theirs show for you either way.
     /// </summary>
+    [JsonProperty("shareNamePlate")]
+    public bool ShareNamePlate = true;
+
+    // The first 1.1.0 build called it "shareLook"
     [JsonProperty("shareLook")]
-    public bool ShareLook = true;
+    private bool? LegacyShareLook
+    {
+        get => null;
+        set
+        {
+            if (value is { } share)
+            {
+                ShareNamePlate = share;
+            }
+        }
+    }
 
     [JsonProperty("nemesis")]
     public NemesisConfig Nemesis;

@@ -60,7 +60,7 @@ public static class ChatSpecialIconShowPatch
             if (IconTable.OthersScope)
             {
                 // Someone else: the look they share, if they run the mod too; else the game's
-                var shared = SharedLooks.For(null, playerName ?? IconTable.OthersName);
+                var shared = SharedNamePlates.For(null, playerName ?? IconTable.OthersName);
                 NameColorizer.AttachStyle(label, isNameColored ? shared?.Tagged : null);
                 if (shared?.Icon != null && __instance._icon != null)
                 {
@@ -125,7 +125,7 @@ public static class PlayerNamePanelPatch
             {
                 NameColorizer.Attach(__instance._name, null);
                 NameColorizer.Attach(__instance._description, null);
-                BotLooks.ApplyTo(__instance, SharedLooks.For(null, nickname), nickname);
+                BotLooks.ApplyTo(__instance, SharedNamePlates.For(null, nickname), nickname);
                 return;
             }
 
@@ -231,7 +231,7 @@ public static class DeathScreenPatch
             // (Fika) gets the look they share.
             var look = BotLooks.IsPmcBot(aggressor.Role)
                 ? BotLooks.For(aggressor.Name, BotLooks.SideOf(aggressor.Side), aggressor.ProfileId)
-                : SharedLooks.For(aggressor.ProfileId, aggressor.Name);
+                : SharedNamePlates.For(aggressor.ProfileId, aggressor.Name);
             if (look != null)
             {
                 BotLooks.ApplyTo(panel, look, panel._name != null ? panel._name.text : null);
@@ -260,7 +260,7 @@ public static class KillListPatch
             // Rows are reused, so a row without a look is put back to plain
             var look = !knownName || victim == null ? null
                 : BotLooks.IsPmcBot(victim.Role) ? BotLooks.For(victim.Name, BotLooks.SideOf(victim.Side), victim.ProfileId)
-                : SharedLooks.For(victim.ProfileId, victim.Name);
+                : SharedNamePlates.For(victim.ProfileId, victim.Name);
             NameColorizer.AttachStyle(__instance._name, look?.Tagged);
             Nemesis.MarkVictim(__instance._name, knownName && victim != null && Nemesis.IsPmc(victim.Role, victim.Side) ? victim.Name : null);
         }

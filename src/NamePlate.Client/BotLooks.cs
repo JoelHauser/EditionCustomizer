@@ -38,14 +38,14 @@ public static class BotLooks
         if (config == null)
         {
             _rules = BotDefaults.Rules(LibraryIcons());
-            Plugin.Log.LogInfo($"PMC bot looks on with the defaults: {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
+            Plugin.Log.LogInfo($"PMC bot Name Plates on with the defaults: {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
             return;
         }
 
         if (!config.Enabled)
         {
             _rules = null;
-            Plugin.Log.LogInfo("PMC bot looks are off in icons.json");
+            Plugin.Log.LogInfo("PMC bot Name Plates are off in icons.json");
             return;
         }
 
@@ -81,7 +81,7 @@ public static class BotLooks
             IconEffectChance = Mathf.Clamp(config.IconEffectChance, 0, 100),
             IconEffects = config.IconEffects?.Select(e => e.Trim().ToLowerInvariant()).ToArray(),
         };
-        Plugin.Log.LogInfo($"PMC bot looks on: {_rules.Share}% of PMCs, {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
+        Plugin.Log.LogInfo($"PMC bot Name Plates on: {_rules.Share}% of PMCs, {_rules.Icons.Length} icons, {_rules.Palettes.Length} presets");
     }
 
     // icons/library/*.png as the plugin refers to them
@@ -111,7 +111,7 @@ public static class BotLooks
             return null;
         }
 
-        if (SharedLooks.For(profileId, name) is { } shared)
+        if (SharedNamePlates.For(profileId, name) is { } shared)
         {
             return shared;
         }
@@ -151,7 +151,7 @@ public static class BotLooks
         }
         catch (Exception e)
         {
-            Plugin.Log.LogWarning($"No look for bot \"{name}\": {e.Message}");
+            Plugin.Log.LogWarning($"No Name Plate for bot \"{name}\": {e.Message}");
             return null;
         }
     }

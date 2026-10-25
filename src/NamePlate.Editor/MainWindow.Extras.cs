@@ -146,7 +146,7 @@ public partial class MainWindow
             }
         }, reshow: true);
 
-        SetStatus("A random look. Surprise me again for another, Ctrl+Z for the one before, Save to keep it.");
+        SetStatus("A random Name Plate. Surprise me again for another, Ctrl+Z for the one before, Save to keep it.");
     }
 
     // ---------------------------------------------------------------- Share codes
@@ -176,7 +176,7 @@ public partial class MainWindow
         try
         {
             Clipboard.SetText(IconsFile.ToCode(entry));
-            SetStatus(shareable ? "Look copied as a code" : "Look copied as a code (without the picture: it's only on this PC)");
+            SetStatus(shareable ? "Name Plate copied as a code" : "Name Plate copied as a code (without the picture: it's only on this PC)");
         }
         catch (System.Runtime.InteropServices.ExternalException)
         {
@@ -206,7 +206,7 @@ public partial class MainWindow
         var entry = IconsFile.FromCode(text);
         if (entry == null)
         {
-            SetStatus("The clipboard doesn't hold a look code (they start with CI1-)");
+            SetStatus("The clipboard doesn't hold a Name Plate code (they start with CI1-)");
             return;
         }
 
@@ -241,7 +241,7 @@ public partial class MainWindow
                 i.Fps = look.Fps;
             }
         }, reshow: true);
-        SetStatus("Look pasted");
+        SetStatus("Name Plate pasted");
     }
 
     // ---------------------------------------------------------------- Animated icon preview

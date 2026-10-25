@@ -97,13 +97,27 @@ public class IconsFile
     [JsonPropertyName("bots")]
     public BotsConfig? Bots { get; set; }
 
-    /// <summary>Your scav's name gets your look too.</summary>
+    /// <summary>Your scav's name gets your Name Plate too.</summary>
     [JsonPropertyName("scavLook")]
     public bool ScavLook { get; set; }
 
-    /// <summary>Other players on your server who run the mod see your look.</summary>
+    /// <summary>Name Plate sharing: other players on your server who run the mod see your Name Plate.</summary>
+    [JsonPropertyName("shareNamePlate")]
+    public bool ShareNamePlate { get; set; } = true;
+
+    /// <summary>The first 1.1.0 build's name for <see cref="ShareNamePlate"/>: read, never written (null is left out).</summary>
     [JsonPropertyName("shareLook")]
-    public bool ShareLook { get; set; } = true;
+    public bool? LegacyShareLook
+    {
+        get => null;
+        set
+        {
+            if (value is { } share)
+            {
+                ShareNamePlate = share;
+            }
+        }
+    }
 
     [JsonPropertyName("nemesis")]
     public NemesisConfig? Nemesis { get; set; }

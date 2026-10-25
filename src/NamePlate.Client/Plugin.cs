@@ -77,7 +77,7 @@ public class Plugin : BaseUnityPlugin
 
     private void Update()
     {
-        SharedLooks.Tick();
+        SharedNamePlates.Tick();
         if (_changed)
         {
             // Wait for the burst of events one save makes to settle

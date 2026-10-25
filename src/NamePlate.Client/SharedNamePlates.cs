@@ -15,16 +15,16 @@ using UnityEngine;
 namespace NamePlate.Client;
 
 /// <summary>
-/// Looks shared between players on one server (Fika): yours goes to the server mod whenever it
-/// changes, everyone else's comes back, and they're drawn wherever the game draws that player
+/// Name Plate sharing between players on one server (Fika): yours goes to the server mod whenever
+/// it changes, everyone else's comes back, and they're drawn wherever the game draws that player
 /// (lobby and group lists, chat, invites, the death screen, the kill list, dogtags, the flea).
 ///
 /// Requests go through SPT's own RequestHandler, found by name, so they reach whichever server
 /// the game is connected to with its session. Answers arrive on a worker thread and are handed to
 /// the main thread, where sprites can be made. A server without the routes (an older Name Plate)
-/// costs one log line, and players keep the game's look for each other as before.
+/// costs one log line, and players keep the game's own name and icon for each other as before.
 /// </summary>
-public static class SharedLooks
+public static class SharedNamePlates
 {
     private const float CheckEvery = 5f;
     private const float FetchEvery = 60f;
@@ -41,7 +41,7 @@ public static class SharedLooks
         public string Raw;
         public IconEntry Entry;
         public string Picture;
-        public BotLooks.Look Look;
+        public BotLooks.Look Drawn;
     }
 
     private static readonly ConcurrentQueue<Action> MainThread = new();
@@ -62,13 +62,13 @@ public static class SharedLooks
 
     // ---- What the log says, so testers' logs show what was sent, received and drawn. Each line is
     // written once per change, never per frame or per screen.
-    private const string Tag = "[Sharing] ";
+    private const string Tag = "[Name Plate sharing] ";
     private static bool _announced;
     private static string _lastList;
     private static readonly Dictionary<string, string> Met = new(StringComparer.Ordinal);
     private static readonly HashSet<string> MetReported = new(StringComparer.Ordinal);
 
-    /// <summary>The look another player shares, or null for the game's own.</summary>
+    /// <summary>The Name Plate another player shares, or null for the game's own.</summary>
     public static BotLooks.Look For(string profileId, string nickname)
     {
         var remote = Find(profileId, nickname);
@@ -79,28 +79,28 @@ public static class SharedLooks
 
         try
         {
-            if (remote.Look == null)
+            if (remote.Drawn == null)
             {
-                remote.Look = Build(remote);
-                Plugin.Log.LogInfo($"{Tag}Drawing {remote.Nickname}'s shared look ({Describe(remote.Entry, remote.Picture != null)})"
-                    + (remote.Picture != null && remote.Look.Icon == null ? "; their picture hasn't arrived yet, the icon follows" : ""));
+                remote.Drawn = Build(remote);
+                Plugin.Log.LogInfo($"{Tag}Drawing {remote.Nickname}'s Name Plate ({Describe(remote.Entry, remote.Picture != null)})"
+                    + (remote.Picture != null && remote.Drawn.Icon == null ? "; their picture hasn't arrived yet, the icon follows" : ""));
             }
 
-            return remote.Look;
+            return remote.Drawn;
         }
         catch (Exception e)
         {
-            Safe.Report("building a shared look", e);
+            Safe.Report("building a shared Name Plate", e);
             return null;
         }
     }
 
-    /// <summary>Someone new is about (a raid started): ask for looks soon rather than in a minute.</summary>
+    /// <summary>Someone new is about (a raid started): ask for Name Plates soon rather than in a minute.</summary>
     public static void FetchSoon() => _nextFetch = Mathf.Min(_nextFetch, Time.unscaledTime + 2f);
 
     /// <summary>
-    /// A real player joined your raid. After the next fetch the log says whether they share a look,
-    /// which is the first thing to know when someone reports not seeing a friend's look.
+    /// A real player joined your raid. After the next fetch the log says whether they share their
+    /// Name Plate, the first thing to know when someone reports not seeing a friend's.
     /// </summary>
     public static void MetInRaid(string profileId, string nickname)
     {
@@ -113,7 +113,7 @@ public static class SharedLooks
         FetchSoon();
     }
 
-    // "3 colors, wave, tag [EZ], owl" -- enough to compare with what the other player set
+    // "3 colors, wave, tag [EZ], owl icon" -- enough to compare with what the other player set
     private static string Describe(IconEntry e, bool ownPicture)
     {
         var parts = new List<string>
@@ -158,7 +158,7 @@ public static class SharedLooks
             }
             catch (Exception e)
             {
-                Safe.Report("handling a shared look", e);
+                Safe.Report("handling a shared Name Plate", e);
             }
         }
 
@@ -179,9 +179,9 @@ public static class SharedLooks
         if (!_announced)
         {
             _announced = true;
-            Plugin.Log.LogInfo($"{Tag}Name Plate {ModVersion.Value}: your look is "
-                + (Plugin.Settings.ShareLook ? "shared with other players on this server" : "not shared (switched off on the editor's Profile page)")
-                + $"; other players' looks are checked every {FetchEvery:0} s. Lines starting [Sharing] are what to send with a bug report.");
+            Plugin.Log.LogInfo($"{Tag}Name Plate {ModVersion.Value}: your Name Plate is "
+                + (Plugin.Settings.ShareNamePlate ? "shared with other players on this server" : "not shared (switched off on the editor's Profile page)")
+                + $"; other players' Name Plates are checked every {FetchEvery:0} s. Lines starting [Name Plate sharing] are what to send with a bug report.");
         }
 
         SendOwn(session.Profile);
@@ -201,19 +201,19 @@ public static class SharedLooks
             return;
         }
 
-        var (look, picturePath, signature) = OwnLook(profile);
+        var (namePlate, picturePath, signature) = OwnNamePlate(profile);
         if (signature == _sent)
         {
             return;
         }
 
         var bytes = picturePath == null ? null : File.ReadAllBytes(picturePath);
-        var body = new JObject { ["look"] = look, ["picture"] = bytes == null ? null : Convert.ToBase64String(bytes) };
-        var what = look is JObject sent
-            ? $"your look ({Describe(sent.ToObject<IconEntry>(), bytes != null)}{(bytes != null ? $", {bytes.Length / 1024 + 1} KB" : "")})"
-            : "nothing (the icon you show is the game's own" + (Plugin.Settings.ShareLook ? ")" : ", or sharing is off)");
+        var body = new JObject { ["nameplate"] = namePlate, ["picture"] = bytes == null ? null : Convert.ToBase64String(bytes) };
+        var what = namePlate is JObject sent
+            ? $"your Name Plate ({Describe(sent.ToObject<IconEntry>(), bytes != null)}{(bytes != null ? $", {bytes.Length / 1024 + 1} KB" : "")})"
+            : "nothing (the icon you show is the game's own" + (Plugin.Settings.ShareNamePlate ? ")" : ", or sharing is off)");
         _sendBusy = true;
-        Post("/nameplate/look", body.ToString(Formatting.None), "message", reply =>
+        Post("/nameplate/share", body.ToString(Formatting.None), "message", reply =>
         {
             _sendBusy = false;
             if (reply != null)
@@ -229,11 +229,11 @@ public static class SharedLooks
     /// comes along as PNG bytes, the color the game gives the icon is filled in, and things only
     /// this PC has (the dropdown name, a prestige picture) are left out.
     /// </summary>
-    private static (JToken Look, string PicturePath, string Signature) OwnLook(Profile profile)
+    private static (JToken NamePlate, string PicturePath, string Signature) OwnNamePlate(Profile profile)
     {
         var settings = EFTHardSettings.Instance.ChatSpecialIconSettings;
         var row = settings.GetDataByMemberCategory(profile.Info.SelectedMemberCategory);
-        var entry = row == null || !Plugin.Settings.ShareLook ? null : IconTable.EntryFor(row.Category);
+        var entry = row == null || !Plugin.Settings.ShareNamePlate ? null : IconTable.EntryFor(row.Category);
         if (entry == null)
         {
             return (JValue.CreateNull(), null, "none");
@@ -264,12 +264,12 @@ public static class SharedLooks
             copy.IconFrom = IconTable.IsCustom(row.Category) ? nameof(EMemberCategory.Default) : row.Category.ToString();
         }
 
-        var look = JObject.Parse(JsonConvert.SerializeObject(copy, new JsonSerializerSettings
+        var namePlate = JObject.Parse(JsonConvert.SerializeObject(copy, new JsonSerializerSettings
         {
             NullValueHandling = NullValueHandling.Ignore,
             DefaultValueHandling = DefaultValueHandling.Ignore,
         }));
-        return (look, picture, look.ToString(Formatting.None) + "|" + pictureTime);
+        return (namePlate, picture, namePlate.ToString(Formatting.None) + "|" + pictureTime);
     }
 
     // ---------------------------------------------------------------- theirs
@@ -277,30 +277,30 @@ public static class SharedLooks
     private static void FetchAll()
     {
         _fetchBusy = true;
-        Post("/nameplate/looks", "{}", "looks", reply =>
+        Post("/nameplate/shared", "{}", "nameplates", reply =>
         {
             _fetchBusy = false;
             if (reply != null)
             {
-                Take(reply["looks"] as JArray);
+                Take(reply["nameplates"] as JArray);
             }
         });
     }
 
-    private static void Take(JArray looks)
+    private static void Take(JArray shared)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var item in looks ?? new JArray())
+        foreach (var item in shared ?? new JArray())
         {
             var id = (string)item["profileId"];
             var nickname = (string)item["nickname"];
-            if (string.IsNullOrEmpty(id) || id == _ownId || item["look"] is not JObject look)
+            if (string.IsNullOrEmpty(id) || id == _ownId || item["nameplate"] is not JObject namePlate)
             {
                 continue;
             }
 
             seen.Add(id);
-            var raw = look.ToString(Formatting.None);
+            var raw = namePlate.ToString(Formatting.None);
             var picture = (string)item["picture"];
             if (ById.TryGetValue(id, out var known) && known.Raw == raw && known.Picture == picture && known.Nickname == nickname)
             {
@@ -310,7 +310,7 @@ public static class SharedLooks
             var remote = new Remote
             {
                 ProfileId = id, Nickname = nickname, Raw = raw, Picture = picture != null && Hash.IsMatch(picture) ? picture : null,
-                Entry = look.ToObject<IconEntry>(),
+                Entry = namePlate.ToObject<IconEntry>(),
             };
             Forget(id);
             ById[id] = remote;
@@ -330,7 +330,7 @@ public static class SharedLooks
             }
         }
 
-        // Who the server has looks for, said again only when that changes
+        // Whose Name Plates the server has, said again only when that changes
         var names = new List<string>();
         foreach (var r in ById.Values)
         {
@@ -343,17 +343,17 @@ public static class SharedLooks
         {
             _lastList = list;
             Plugin.Log.LogInfo(names.Count == 0
-                ? $"{Tag}The server has no looks from other players yet"
-                : $"{Tag}The server has looks from {names.Count} other player(s): {list}");
+                ? $"{Tag}The server has no Name Plates from other players yet"
+                : $"{Tag}The server has Name Plates from {names.Count} other player(s): {list}");
         }
 
-        // Players met in a raid since the last fetch: do they share a look?
+        // Players met in a raid since the last fetch: do they share their Name Plate?
         foreach (var met in Met)
         {
             MetReported.Add(met.Key);
             Plugin.Log.LogInfo(Find(met.Key, met.Value) != null
-                ? $"{Tag}{met.Value} is in your raid and shares a look"
-                : $"{Tag}{met.Value} is in your raid but shares no look: they need Name Plate {ModVersion.Value} or later with sharing on, "
+                ? $"{Tag}{met.Value} is in your raid and shares their Name Plate"
+                : $"{Tag}{met.Value} is in your raid but doesn't share a Name Plate: they need Name Plate {ModVersion.Value} or later with sharing on, "
                   + "and this server needs the Name Plate server mod");
         }
 
@@ -392,7 +392,7 @@ public static class SharedLooks
             {
                 if (reply != null)
                 {
-                    Plugin.Log.LogWarning($"{Tag}{remote.Nickname}'s picture isn't on the server; their look shows without it");
+                    Plugin.Log.LogWarning($"{Tag}{remote.Nickname}'s picture isn't on the server; their Name Plate shows without it");
                 }
 
                 return;
@@ -408,13 +408,13 @@ public static class SharedLooks
             {
                 if (r.Picture == hash)
                 {
-                    r.Look = null;
+                    r.Drawn = null;
                 }
             }
         });
     }
 
-    /// <summary>A shared entry as a look, the way the plugin draws your own.</summary>
+    /// <summary>A shared entry, drawn the way the plugin draws your own Name Plate.</summary>
     private static BotLooks.Look Build(Remote remote)
     {
         var entry = remote.Entry;
@@ -460,7 +460,7 @@ public static class SharedLooks
             if (_postAsync == null)
             {
                 _off = true;
-                Plugin.Log.LogWarning($"{Tag}Off: SPT's RequestHandler wasn't found, so looks can't be sent or fetched");
+                Plugin.Log.LogWarning($"{Tag}Off: SPT's RequestHandler wasn't found, so Name Plates can't be sent or fetched");
             }
         }
 

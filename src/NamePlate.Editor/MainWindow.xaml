@@ -162,11 +162,11 @@
                                         <Button x:Name="GameColorButton" Style="{StaticResource ToolBtn}" Tag="&#xE7A7;" Content="Game's color" Margin="0,0,8,0"
                                                 ToolTip="Back to the color the game gives this icon" />
                                         <Button x:Name="CopyCodeButton" Style="{StaticResource ToolBtn}" Tag="&#xE8C8;" Content="Copy code" Margin="0,0,8,0"
-                                                ToolTip="Copy this look as a code to share; anyone with the mod can paste it" />
+                                                ToolTip="Copy this Name Plate as a code to share; anyone with the mod can paste it" />
                                         <Button x:Name="PasteCodeButton" Style="{StaticResource ToolBtn}" Tag="&#xE77F;" Content="Paste code" Margin="0,0,8,0"
-                                                ToolTip="Give this icon a look from a code someone shared" />
+                                                ToolTip="Use a Name Plate code someone shared on this icon" />
                                         <Button x:Name="SurpriseButton" Style="{StaticResource TintBtn}" Tag="&#xE8B1;" Content="Surprise me"
-                                                ToolTip="A random look: colors, animation, effect, tag and picture, the way bots get theirs. Press again for another." />
+                                                ToolTip="A random Name Plate: colors, animation, effect, tag and picture, the way bots get theirs. Press again for another." />
                                     </StackPanel>
                                     <TextBlock Style="{StaticResource CardTitle}" Text="Nickname color" />
                                 </DockPanel>
@@ -561,9 +561,9 @@
 
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource CardTitle}" Text="Your look elsewhere" />
-                            <ToggleButton x:Name="ScavSwitch" Style="{StaticResource Switch}" Content="Show my scav's name with my look" />
-                            <ToggleButton x:Name="ShareSwitch" Style="{StaticResource Switch}" Margin="0,12,0,0" Content="Show my look to other players on my server"
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Your Name Plate elsewhere" />
+                            <ToggleButton x:Name="ScavSwitch" Style="{StaticResource Switch}" Content="Show my scav's name with my Name Plate" />
+                            <ToggleButton x:Name="ShareSwitch" Style="{StaticResource Switch}" Margin="0,12,0,0" Content="Name Plate sharing: show my Name Plate to other players on my server"
                                           ToolTip="With Fika, friends who also run Name Plate see your colors, tag and icon. Theirs show for you either way." />
                             <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="Saved with Save at the top, like your icons." />
                         </StackPanel>

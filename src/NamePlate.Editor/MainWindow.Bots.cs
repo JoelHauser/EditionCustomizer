@@ -373,7 +373,7 @@ public partial class MainWindow
         RenderOptions.SetBitmapScalingMode(KillerIcon, icon is { PixelWidth: < 48 } ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
         KillerNote.Text = tag switch
         {
-            "Plain" => _bots.Enabled ? "This name gets no look (Share of PMCs)." : "PMC bot looks are off.",
+            "Plain" => _bots.Enabled ? "This name gets no Name Plate (Share of PMCs)." : "PMC bot Name Plates are off.",
             _ => "",
         };
     }

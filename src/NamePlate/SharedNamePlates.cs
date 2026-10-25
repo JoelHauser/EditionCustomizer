@@ -12,45 +12,47 @@ using SPTarkov.Server.Core.Models.Common;
 namespace NamePlate;
 
 /// <summary>
-/// Every player's look, so players on one server (Fika) see each other's names and icons. Each
-/// game sends its own look when it changes (<see cref="LookRouter"/>) and asks for everyone's.
+/// Name Plate sharing: every player's Name Plate, so players on one server (Fika) see each other's
+/// names and icons. Each game sends its own when it changes (<see cref="ShareRouter"/>) and asks for
+/// everyone's.
 ///
-/// Kept by session: a game can only set its own look, and the nickname is the server's, not one
-/// the game sends. The look itself is the plugin's icons.json entry, kept as it came; a picture
-/// nobody else has (your own PNG, a recolor) comes along as PNG bytes, kept by hash. Saved to
-/// looks.json in the mod folder, so looks are there for players who join before their owner does.
+/// Kept by session: a game can only set its own Name Plate, and the nickname is the server's, not
+/// one the game sends. The Name Plate itself is the plugin's icons.json entry, kept as it came; a
+/// picture nobody else has (your own PNG, a recolor) comes along as PNG bytes, kept by hash. Saved
+/// to shared-nameplates.json in the mod folder, so they're there for players who join before their
+/// owner does.
 /// </summary>
 [Injectable(InjectionType.Singleton)]
-public class SharedLooks(ISptLogger<SharedLooks> logger, ProfileHelper profileHelper, ModHelper modHelper)
+public class SharedNamePlates(ISptLogger<SharedNamePlates> logger, ProfileHelper profileHelper, ModHelper modHelper)
 {
-    // A look is a few hundred bytes; an animated icon strip can be a few hundred KB
-    public const int MaxLookBytes = 16 * 1024;
+    // A Name Plate is a few hundred bytes; an animated icon strip can be a few hundred KB
+    public const int MaxNamePlateBytes = 16 * 1024;
     public const int MaxPictureBytes = 512 * 1024;
 
     public sealed class Stored
     {
         [JsonPropertyName("nickname")] public string Nickname { get; set; } = "";
-        [JsonPropertyName("look")] public JsonElement Look { get; set; }
+        [JsonPropertyName("nameplate")] public JsonElement NamePlate { get; set; }
         [JsonPropertyName("picture")] public string? PictureHash { get; set; }
         [JsonPropertyName("updated")] public DateTime Updated { get; set; }
     }
 
-    private sealed class LooksFile
+    private sealed class SharedFile
     {
-        [JsonPropertyName("looks")] public Dictionary<string, Stored> Looks { get; set; } = [];
+        [JsonPropertyName("nameplates")] public Dictionary<string, Stored> NamePlates { get; set; } = [];
         [JsonPropertyName("pictures")] public Dictionary<string, string> Pictures { get; set; } = [];
     }
 
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
-    private readonly ConcurrentDictionary<string, Stored> _looks = new();
+    private readonly ConcurrentDictionary<string, Stored> _shared = new();
 
     // Hash -> base64 PNG
     private readonly ConcurrentDictionary<string, string> _pictures = new();
     private readonly object _saveGate = new();
     private string? _path;
 
-    private string PathOnDisk => _path ??= System.IO.Path.Combine(modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly()), "looks.json");
+    private string PathOnDisk => _path ??= System.IO.Path.Combine(modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly()), "shared-nameplates.json");
 
     private bool _loaded;
 
@@ -76,10 +78,10 @@ public class SharedLooks(ISptLogger<SharedLooks> logger, ProfileHelper profileHe
                 return;
             }
 
-            var file = JsonSerializer.Deserialize<LooksFile>(File.ReadAllText(PathOnDisk), Options) ?? new LooksFile();
-            foreach (var (id, look) in file.Looks)
+            var file = JsonSerializer.Deserialize<SharedFile>(File.ReadAllText(PathOnDisk), Options) ?? new SharedFile();
+            foreach (var (id, plate) in file.NamePlates)
             {
-                _looks[id] = look;
+                _shared[id] = plate;
             }
 
             foreach (var (hash, png) in file.Pictures)
@@ -87,47 +89,49 @@ public class SharedLooks(ISptLogger<SharedLooks> logger, ProfileHelper profileHe
                 _pictures[hash] = png;
             }
 
-            logger.Info($"Name Plate: {_looks.Count} shared look(s) loaded from {PathOnDisk}");
+            logger.Info($"Name Plate sharing: {_shared.Count} shared Name Plate(s) loaded from {PathOnDisk}");
         }
         catch (Exception e)
         {
-            logger.Warning($"Name Plate: couldn't read {PathOnDisk}, starting without saved looks: {e.Message}");
+            logger.Warning($"Name Plate sharing: couldn't read {PathOnDisk}, starting without saved Name Plates: {e.Message}");
         }
     }
 
     /// <summary>
-    /// Sets (or with a null look, clears) the look of the player behind this session. Each one is a
-    /// line in the server console: games only send when their look changes, so it stays quiet.
+    /// Sets (or with null, clears) the Name Plate of the player behind this session. Each one is a
+    /// line in the server console: games only send when their Name Plate changes, so it stays quiet.
     /// </summary>
-    public string Set(MongoId sessionId, JsonElement? look, string? picture)
+    public string Set(MongoId sessionId, JsonElement? namePlate, string? picture)
     {
         EnsureLoaded();
-        var before = _looks.TryGetValue(sessionId.ToString(), out var had) ? had.Nickname : null;
-        var reply = SetLook(sessionId, look, picture);
-        var who = _looks.TryGetValue(sessionId.ToString(), out var now) ? now.Nickname : before ?? $"session {sessionId}";
-        var what = look is { ValueKind: JsonValueKind.Object } ? $"look{(string.IsNullOrEmpty(picture) ? "" : " with their own picture")}" : "nothing";
-        logger.Info($"Name Plate: {who} shared {what}: {reply}");
+        var before = _shared.TryGetValue(sessionId.ToString(), out var had) ? had.Nickname : null;
+        var reply = SetNamePlate(sessionId, namePlate, picture);
+        var who = _shared.TryGetValue(sessionId.ToString(), out var now) ? now.Nickname : before ?? $"session {sessionId}";
+        var what = namePlate is { ValueKind: JsonValueKind.Object }
+            ? $"their Name Plate{(string.IsNullOrEmpty(picture) ? "" : " with their own picture")}"
+            : "nothing";
+        logger.Info($"Name Plate sharing: {who} sent {what}: {reply}");
         return reply;
     }
 
-    private string SetLook(MongoId sessionId, JsonElement? look, string? picture)
+    private string SetNamePlate(MongoId sessionId, JsonElement? namePlate, string? picture)
     {
         var id = sessionId.ToString();
-        if (look is not { ValueKind: JsonValueKind.Object } given)
+        if (namePlate is not { ValueKind: JsonValueKind.Object } given)
         {
-            var removed = _looks.TryRemove(id, out _);
+            var removed = _shared.TryRemove(id, out _);
             if (removed)
             {
                 Save();
             }
 
-            return removed ? "look cleared" : "no look to clear";
+            return removed ? "Name Plate no longer shared" : "nothing to stop sharing";
         }
 
         var json = given.GetRawText();
-        if (json.Length > MaxLookBytes)
+        if (json.Length > MaxNamePlateBytes)
         {
-            return "look too big, not kept";
+            return "Name Plate too big, not kept";
         }
 
         // SPT throws rather than answer null for a session it has no profile for
@@ -168,21 +172,21 @@ public class SharedLooks(ISptLogger<SharedLooks> logger, ProfileHelper profileHe
             _pictures[hash] = picture;
         }
 
-        _looks[id] = new Stored
+        _shared[id] = new Stored
         {
             Nickname = nickname,
-            Look = JsonDocument.Parse(json).RootElement.Clone(),
+            NamePlate = JsonDocument.Parse(json).RootElement.Clone(),
             PictureHash = hash,
             Updated = DateTime.UtcNow,
         };
         Save();
-        return "look kept";
+        return "Name Plate shared";
     }
 
-    public IEnumerable<(string ProfileId, Stored Look)> All()
+    public IEnumerable<(string ProfileId, Stored Shared)> All()
     {
         EnsureLoaded();
-        return _looks.Select(p => (p.Key, p.Value));
+        return _shared.Select(p => (p.Key, p.Value));
     }
 
     public string? Picture(string? hash)
@@ -197,21 +201,21 @@ public class SharedLooks(ISptLogger<SharedLooks> logger, ProfileHelper profileHe
         {
             try
             {
-                // Pictures nobody's look uses any more go
-                var used = _looks.Values.Select(l => l.PictureHash).Where(h => h != null).ToHashSet();
+                // Pictures no shared Name Plate uses any more go
+                var used = _shared.Values.Select(s => s.PictureHash).Where(h => h != null).ToHashSet();
                 foreach (var hash in _pictures.Keys.Where(h => !used.Contains(h)).ToList())
                 {
                     _pictures.TryRemove(hash, out _);
                 }
 
-                var file = new LooksFile { Looks = _looks.ToDictionary(p => p.Key, p => p.Value), Pictures = _pictures.ToDictionary(p => p.Key, p => p.Value) };
+                var file = new SharedFile { NamePlates = _shared.ToDictionary(p => p.Key, p => p.Value), Pictures = _pictures.ToDictionary(p => p.Key, p => p.Value) };
                 var temp = PathOnDisk + ".tmp";
                 File.WriteAllText(temp, JsonSerializer.Serialize(file, Options));
                 File.Move(temp, PathOnDisk, overwrite: true);
             }
             catch (Exception e)
             {
-                logger.Warning($"Name Plate: couldn't save {PathOnDisk}: {e.Message}");
+                logger.Warning($"Name Plate sharing: couldn't save {PathOnDisk}: {e.Message}");
             }
         }
     }

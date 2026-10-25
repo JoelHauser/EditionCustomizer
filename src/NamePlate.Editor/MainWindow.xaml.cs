@@ -155,8 +155,8 @@ public partial class MainWindow : Window
 
         ScavSwitch.Checked += (_, _) => SetFileOption(f => f.ScavLook = true);
         ScavSwitch.Unchecked += (_, _) => SetFileOption(f => f.ScavLook = false);
-        ShareSwitch.Checked += (_, _) => SetFileOption(f => f.ShareLook = true);
-        ShareSwitch.Unchecked += (_, _) => SetFileOption(f => f.ShareLook = false);
+        ShareSwitch.Checked += (_, _) => SetFileOption(f => f.ShareNamePlate = true);
+        ShareSwitch.Unchecked += (_, _) => SetFileOption(f => f.ShareNamePlate = false);
 
         ReverseSwitch.Checked += (_, _) => Edit(i => i.Reverse = true);
         ReverseSwitch.Unchecked += (_, _) => Edit(i => i.Reverse = false);
@@ -360,7 +360,7 @@ public partial class MainWindow : Window
 
         _settingOptions = true;
         ScavSwitch.IsChecked = _file.ScavLook;
-        ShareSwitch.IsChecked = _file.ShareLook;
+        ShareSwitch.IsChecked = _file.ShareNamePlate;
         _settingOptions = false;
         BuildPresets();
 
@@ -1031,7 +1031,7 @@ public partial class MainWindow : Window
 
         var file = new IconsFile
         {
-            DumpOriginalIcons = _file.DumpOriginalIcons, ScavLook = _file.ScavLook, ShareLook = _file.ShareLook, Nemesis = _file.Nemesis, Presets = _file.Presets,
+            DumpOriginalIcons = _file.DumpOriginalIcons, ScavLook = _file.ScavLook, ShareNamePlate = _file.ShareNamePlate, Nemesis = _file.Nemesis, Presets = _file.Presets,
         };
         try
         {
