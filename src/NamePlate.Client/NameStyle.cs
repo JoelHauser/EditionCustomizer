@@ -38,6 +38,19 @@ public class NameStyle
     /// <summary>A clan tag shown before the name, without brackets; null for none.</summary>
     public string Tag;
 
+    /// <summary>The tag's own color; null for the quiet gray.</summary>
+    public Color? TagColor;
+
+    /// <summary>The tag is painted with the name's colors, as if part of the name.</summary>
+    public bool TagInName;
+
+    /// <summary>Sets the tag color from "#RRGGBB", "name" (the name's colors), or null/anything else (gray).</summary>
+    public void SetTagColor(string text)
+    {
+        TagInName = string.Equals(text?.Trim(), TagColors.Name, StringComparison.OrdinalIgnoreCase);
+        TagColor = !TagInName && !string.IsNullOrEmpty(text) && ColorUtility.TryParseHtmlString(text, out var color) ? color : null;
+    }
+
     private readonly double[] _rgb = new double[3];
 
     public bool Moving => Paint.Moving;
@@ -89,6 +102,7 @@ public class NameStyle
             Mathf.Max(0, entry.Animate), entry.Motion, entry.Reverse);
         style.Effects = effects;
         style.Tag = tag;
+        style.SetTagColor(entry.TagColor);
         return style;
     }
 

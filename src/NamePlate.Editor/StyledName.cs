@@ -16,9 +16,13 @@ public record NameFx(Color? Outline = null, Color? Glow = null, bool Shadow = fa
 /// How a nickname is colored and moves. The math is the shared NamePaint, the same code the plugin
 /// runs, so the preview is what the game draws.
 /// </summary>
-public record NameLook(IReadOnlyList<Color> Colors, NameMode Mode, double Speed, string? Motion = null, bool Reverse = false, NameFx? Fx = null, string? Tag = null)
+public record NameLook(IReadOnlyList<Color> Colors, NameMode Mode, double Speed, string? Motion = null, bool Reverse = false, NameFx? Fx = null, string? Tag = null,
+    string? TagColor = null)
 {
     public static NameLook Solid(Color color) => new([color], NameMode.Solid, 0);
+
+    /// <summary>The tag is painted with the name's colors, as the game does for "tagColor": "name".</summary>
+    public bool TagInName => Tag != null && string.Equals(TagColor, TagColors.Name, StringComparison.OrdinalIgnoreCase);
 
     public bool Moving => ToPaint().Moving;
 
@@ -168,7 +172,10 @@ public class StyledName : FrameworkElement
     {
         var fx = Fx;
         var paint = _paint;
-        var (shown, nameStart) = Shown();
+        var (shown, tagEnd) = Shown();
+
+        // A tag in the name's colors is painted as the name's first letters
+        var nameStart = Look?.TagInName == true ? 0 : tagEnd;
         var origin = new Point(0, 0);
         var text = Format(shown, fx, Brushes.White);
         var time = (DateTime.UtcNow - Start).TotalSeconds;
@@ -210,7 +217,7 @@ public class StyledName : FrameworkElement
             brushes.Add(brush);
         }
 
-        var tagBrush = new SolidColorBrush(TagColor);
+        var tagBrush = new SolidColorBrush(Images.TryParseColor(Look?.TagColor, out var ownTag) ? ownTag : TagColor);
         tagBrush.Freeze();
         for (var i = 0; i < nameStart; i++)
         {

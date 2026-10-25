@@ -61,20 +61,34 @@ public static class LocalPlayer
 
     private static bool _reported;
 
-    /// <summary>
-    /// Runs the game's drawing of someone else with the game's own icons. Scopes nest (a name
-    /// panel inside a chat row), so this returns what was set before, for Leave to put back.
-    /// </summary>
-    public static bool Enter(bool someoneElse)
+    /// <summary>What a scope replaced, for Leave to put back.</summary>
+    public struct Scope
     {
-        var before = IconTable.OthersScope;
-        IconTable.OthersScope = before || someoneElse;
+        public bool Others;
+        public string Name;
+    }
+
+    /// <summary>
+    /// Runs the game's drawing of someone else with the game's own icons, or with the look they
+    /// share (Fika) when <paramref name="name"/> says who it is. Scopes nest (a name panel inside
+    /// a chat row), so this returns what was set before, for Leave to put back.
+    /// </summary>
+    public static Scope Enter(bool someoneElse, string name = null)
+    {
+        var before = new Scope { Others = IconTable.OthersScope, Name = IconTable.OthersName };
+        IconTable.OthersScope = before.Others || someoneElse;
+        if (someoneElse)
+        {
+            IconTable.OthersName = name;
+        }
+
         return before;
     }
 
-    public static Exception Leave(Exception exception, bool before = false)
+    public static Exception Leave(Exception exception, Scope before)
     {
-        IconTable.OthersScope = before;
+        IconTable.OthersScope = before.Others;
+        IconTable.OthersName = before.Name;
         return exception;
     }
 }
@@ -87,29 +101,29 @@ public static class LocalPlayer
 [HarmonyPatch(typeof(DialogueView), nameof(DialogueView.SetValuesByDialogueType))]
 public static class DialogueViewScopePatch
 {
-    public static void Prefix(out bool __state) => __state = LocalPlayer.Enter(true);
+    public static void Prefix(out LocalPlayer.Scope __state) => __state = LocalPlayer.Enter(true);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>Messages tab, the messages in a conversation.</summary>
 [HarmonyPatch(typeof(MessageView), nameof(MessageView.Show))]
 public static class MessageViewScopePatch
 {
-    public static void Prefix(UpdatableChatMember chatMember, out bool __state) =>
-        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(chatMember?.Info?.Nickname));
+    public static void Prefix(UpdatableChatMember chatMember, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(chatMember?.Info?.Nickname), chatMember?.Info?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>A conversation's member list.</summary>
 [HarmonyPatch(typeof(ChatMember), nameof(ChatMember.Show))]
 public static class ChatMemberScopePatch
 {
-    public static void Prefix(UpdatableChatMember member, UpdatableChatMember playerMember, out bool __state) =>
-        __state = LocalPlayer.Enter(member != playerMember && !LocalPlayer.IsYou(member?.Info?.Nickname));
+    public static void Prefix(UpdatableChatMember member, UpdatableChatMember playerMember, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(member != playerMember && !LocalPlayer.IsYou(member?.Info?.Nickname), member?.Info?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>
@@ -121,7 +135,8 @@ public static class ChatMemberScopePatch
     typeof(EFT.UI.Ragfair.RagFair), typeof(EFT.UI.Ragfair.Offer.Merchant), typeof(bool))]
 public static class FleaSellerPatch
 {
-    public static void Prefix(bool isMyOffer, out bool __state) => __state = LocalPlayer.Enter(!isMyOffer);
+    public static void Prefix(bool isMyOffer, EFT.UI.Ragfair.Offer.Merchant merchant, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(!isMyOffer, merchant?.Nickname);
 
     public static void Postfix(EFT.UI.Ragfair.MerchantInfoView __instance, EFT.UI.Ragfair.Offer.Merchant merchant, bool isMyOffer)
     {
@@ -143,7 +158,7 @@ public static class FleaSellerPatch
         }
     }
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>The same row showing a trader's offer: put the label back as the game made it.</summary>
@@ -279,48 +294,50 @@ public static class SellerName
 [HarmonyPatch(typeof(ChatSpecialIcon), nameof(ChatSpecialIcon.Show), typeof(EMemberCategory), typeof(string), typeof(bool), typeof(int))]
 public static class NamedIconScopePatch
 {
-    public static void Prefix(string playerName, out bool __state) =>
-        __state = LocalPlayer.Enter(playerName != null && !LocalPlayer.IsYou(playerName));
+    public static void Prefix(string playerName, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(playerName != null && !LocalPlayer.IsYou(playerName), playerName);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>Friend requests: always another player.</summary>
 [HarmonyPatch(typeof(FriendsInvitationView), nameof(FriendsInvitationView.Show))]
 public static class FriendRequestScopePatch
 {
-    public static void Prefix(out bool __state) => __state = LocalPlayer.Enter(true);
+    public static void Prefix(UpdatableFriendsInvitation invitation, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(true, invitation?.Profile?.Info?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>A group invite: from another player.</summary>
 [HarmonyPatch(typeof(GroupInviteWindow), nameof(GroupInviteWindow.ParseInvite))]
 public static class GroupInviteScopePatch
 {
-    public static void Prefix(out bool __state) => __state = LocalPlayer.Enter(true);
+    public static void Prefix(GroupInvite invite, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(true, invite?.FromProfile?.Info?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>Looking at a group member's equipment.</summary>
 [HarmonyPatch(typeof(PlayerEquipmentWindow), nameof(PlayerEquipmentWindow.Show))]
 public static class EquipmentWindowScopePatch
 {
-    public static void Prefix(GroupPlayer groupPlayer, out bool __state) =>
-        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(groupPlayer?.Info?.Nickname));
+    public static void Prefix(GroupPlayer groupPlayer, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(groupPlayer?.Info?.Nickname), groupPlayer?.Info?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>A raid invite.</summary>
 [HarmonyPatch(typeof(RaidInviteWindow), nameof(RaidInviteWindow.Show))]
 public static class RaidInviteScopePatch
 {
-    public static void Prefix(GroupPlayer player, out bool __state) =>
-        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(player?.Info?.Nickname));
+    public static void Prefix(GroupPlayer player, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(player?.Info?.Nickname), player?.Info?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>
@@ -335,8 +352,8 @@ public static class ProfileWindowScopePatch
         System.Linq.Enumerable.First(AccessTools.GetDeclaredMethods(typeof(InventoryPlayerModelWithStatsWindow)),
             m => m.Name == nameof(InventoryPlayerModelWithStatsWindow.Show) && m.GetParameters().Length == 7);
 
-    public static void Prefix(IProfileDataContainer profileDataContainer, out bool __state) =>
-        __state = LocalPlayer.Enter(profileDataContainer != null && !LocalPlayer.IsYou(profileDataContainer.Nickname));
+    public static void Prefix(IProfileDataContainer profileDataContainer, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(profileDataContainer != null && !LocalPlayer.IsYou(profileDataContainer.Nickname), profileDataContainer?.Nickname);
 
-    public static Exception Finalizer(Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static Exception Finalizer(Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }

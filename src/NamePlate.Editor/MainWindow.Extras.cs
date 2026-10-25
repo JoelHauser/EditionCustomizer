@@ -87,6 +87,68 @@ public partial class MainWindow
         SetStatus("Saved as a preset. Press Save to keep it.");
     }
 
+    // ---------------------------------------------------------------- Surprise me
+
+    /// <summary>
+    /// A random look on the current icon, made by the generator bots get theirs from, with every
+    /// icon and preset in play and the extras a little likelier. The icon's name stays.
+    /// </summary>
+    private void Surprise()
+    {
+        if (Current is null)
+        {
+            return;
+        }
+
+        var rules = DefaultBots().ToRules();
+        rules.AnimateChance = 60;
+        rules.TagChance = 50;
+        rules.TagColorChance = 50;
+        rules.EffectChance = 40;
+        rules.IconEffectChance = 30;
+
+        // Bold and small caps show nothing on your name (already bold, in capitals)
+        rules.Effects = [Shared.NameEffectKinds.Outline, Shared.NameEffectKinds.Glow, Shared.NameEffectKinds.Shadow, Shared.NameEffectKinds.Italic];
+        var look = Shared.BotLookGenerator.For(Guid.NewGuid().ToString("N"), rules);
+        if (look == null)
+        {
+            return;
+        }
+
+        Edit(i =>
+        {
+            i.Colors = [.. look.Colors];
+            i.Mode = look.Mode switch { "gradient" => NameMode.Gradient, "letters" => NameMode.Letters, _ => NameMode.Solid };
+            i.Animate = look.Motion != null ? look.Speed : 0;
+            i.Motion = look.Motion ?? Shared.Motions.Scroll;
+            i.Reverse = look.Reverse;
+            i.Outline = look.Effect == Shared.NameEffectKinds.Outline ? look.EffectColor : null;
+            i.Glow = look.Effect == Shared.NameEffectKinds.Glow ? look.EffectColor : null;
+            i.Shadow = look.Effect == Shared.NameEffectKinds.Shadow;
+            i.Italic = look.Effect == Shared.NameEffectKinds.Italic;
+            i.Tag = look.Tag;
+            i.TagColor = look.TagColor;
+            i.IconEffect = look.IconEffect;
+            i.Tint = null;
+
+            if (look.Icon is { } picture && picture.StartsWith(Shared.BotLookGenerator.MemberPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var member = Categories.Parse(picture[Shared.BotLookGenerator.MemberPrefix.Length..]) ?? 0;
+                i.Source = !i.IsCustom && member == i.Value ? IconSource.Own : IconSource.Game;
+                i.GameIcon = i.Source == IconSource.Game ? Categories.EnumName(member) : null;
+                i.File = null;
+            }
+            else if (look.Icon != null)
+            {
+                i.Source = IconSource.File;
+                i.File = look.Icon;
+                i.GameIcon = null;
+            }
+        }, reshow: true);
+
+        SetStatus("A random look. Surprise me again for another, Ctrl+Z for the one before, Save to keep it.");
+    }
+
     // ---------------------------------------------------------------- Share codes
 
     /// <summary>
@@ -164,6 +226,7 @@ public partial class MainWindow
             i.Italic = look.Italic;
             i.SmallCaps = look.SmallCaps;
             i.Tag = look.Tag;
+            i.TagColor = look.TagColor;
             i.IconEffect = look.IconEffect;
             i.Prestige = look.Prestige;
 
@@ -223,14 +286,11 @@ public partial class MainWindow
             _previewParts.Add((image, scale, move, glow));
         }
 
-        if (_iconFrames.Count > 1 || icon.IconEffect != null)
+        _iconAnimating = _iconFrames.Count > 1 || icon.IconEffect != null;
+        if (_iconAnimating)
         {
-            _iconTimer.Start();
+            EnsureFrameLoop();
             PlayIcon();
-        }
-        else
-        {
-            _iconTimer.Stop();
         }
     }
 
@@ -281,24 +341,70 @@ public partial class MainWindow
 
     // ---------------------------------------------------------------- Animated thumbnails
 
-    private readonly DispatcherTimer _galleryTimer = new() { Interval = TimeSpan.FromMilliseconds(60) };
-
     // Animated icons play in the galleries, so the animated flame looks unlike the still one
-    private void PlayGalleries()
+    private void PlayGalleries(IEnumerable<GalleryItem> items)
     {
-        if (!IsVisible)
-        {
-            return;
-        }
-
         var t = (DateTime.UtcNow - IconClock).TotalSeconds;
-        var items = IconsPage.Visibility == Visibility.Visible ? _gallery : BotsPage.Visibility == Visibility.Visible ? _botIcons : null;
-        foreach (var item in items ?? [])
+        foreach (var item in items)
         {
             if (item.Animated)
             {
                 item.ShowFrame(t, 8);
             }
+        }
+    }
+
+    // ---------------------------------------------------------------- The frame loop
+
+    // The preview icon and the gallery thumbnails move on WPF's own frame, as the animated names
+    // (StyledName) do. They used DispatcherTimers, which run at Background priority, below input:
+    // moving the mouse over the gallery (a hover and a tooltip per tile) kept the dispatcher busy
+    // and the icon froze until the mouse stopped. The loop runs only while something moves.
+    private bool _iconAnimating;
+    private bool _frameLoop;
+
+    private void EnsureFrameLoop()
+    {
+        if (!_frameLoop)
+        {
+            CompositionTarget.Rendering += OnFrame;
+            _frameLoop = true;
+        }
+    }
+
+    private void StopFrameLoop()
+    {
+        if (_frameLoop)
+        {
+            CompositionTarget.Rendering -= OnFrame;
+            _frameLoop = false;
+        }
+    }
+
+    private void OnFrame(object? sender, EventArgs e)
+    {
+        var gallery = IconsPage.Visibility == Visibility.Visible ? _gallery : BotsPage.Visibility == Visibility.Visible ? _botIcons : null;
+        var galleryMoving = gallery != null && gallery.Any(i => i.Animated);
+        var iconMoving = _iconAnimating && IconsPage.Visibility == Visibility.Visible;
+        if (!iconMoving && !galleryMoving)
+        {
+            StopFrameLoop();
+            return;
+        }
+
+        if (!IsVisible || WindowState == WindowState.Minimized)
+        {
+            return;
+        }
+
+        if (iconMoving)
+        {
+            PlayIcon();
+        }
+
+        if (galleryMoving)
+        {
+            PlayGalleries(gallery!);
         }
     }
 }

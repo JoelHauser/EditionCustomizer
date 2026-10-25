@@ -107,6 +107,20 @@ public static class Images
         encoder.Save(buffer);
         var bytes = buffer.ToArray();
 
+        // The same picture already there (a recolor saved again): leave the file alone, or the game
+        // takes it for a new picture and loads it again
+        try
+        {
+            if (File.Exists(path) && File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes))
+            {
+                return;
+            }
+        }
+        catch (IOException)
+        {
+            // Can't read it: write over it as before
+        }
+
         // Written in one go rather than through a temp file and a rename: a virus scanner
         // opening each new file can hold it long enough to fail the rename. Retry briefly for
         // the same reason.

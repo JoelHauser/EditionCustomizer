@@ -110,6 +110,7 @@ public static class RealPlayerSeenPatch
                 && !BotLooks.IsPmcBot(info.Settings?.Role ?? WildSpawnType.assault))
             {
                 RealPlayers.Note(player.ProfileId, info.Nickname);
+                SharedLooks.MetInRaid(player.ProfileId, info.Nickname);
             }
         }
         catch (Exception e)

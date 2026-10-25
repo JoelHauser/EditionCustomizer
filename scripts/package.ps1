@@ -15,11 +15,20 @@
 #>
 param(
     [string] $SPTPath = $env:SPT_PATH,
-    [string] $Version = "1.0.1"
+    # Defaults to the version in Directory.Build.props, the one all three parts are built with
+    [string] $Version
 )
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
+
+$builtVersion = ([xml](Get-Content (Join-Path $root "Directory.Build.props") -Raw)).Project.PropertyGroup.Version
+if (-not $Version) {
+    $Version = $builtVersion
+}
+elseif ($Version -ne $builtVersion) {
+    throw "-Version $Version doesn't match Directory.Build.props ($builtVersion): bump it there instead."
+}
 
 if (-not $SPTPath -or -not (Test-Path (Join-Path $SPTPath "EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll"))) {
     throw "Pass -SPTPath: an SPT 4.1 install folder that has been launched once (e.g. -SPTPath C:\SPT)."

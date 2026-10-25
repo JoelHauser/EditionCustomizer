@@ -54,6 +54,12 @@ namespace NamePlate.Shared
         public static readonly string[] All = { Outline, Glow, Shadow, Bold, Italic, SmallCaps };
     }
 
+    /// <summary>A tag's color: a "#RRGGBB" of its own, this word for the name's colors, or none for gray.</summary>
+    public static class TagColors
+    {
+        public const string Name = "name";
+    }
+
     /// <summary>Movements or a halo on an icon itself.</summary>
     public static class IconEffectKinds
     {
@@ -92,6 +98,9 @@ namespace NamePlate.Shared
 
         /// <summary>The tags to pick from; null for the built-in <see cref="BotTags.All"/>.</summary>
         public string[] Tags;
+
+        /// <summary>Percent of tagged bots whose tag is colored rather than gray.</summary>
+        public int TagColorChance = BotDefaults.TagColorChance;
 
         /// <summary>
         /// BEAR bots draw warm colors, USEC bots cool ones (where the game says which side a bot is
@@ -167,6 +176,7 @@ namespace NamePlate.Shared
         public const int AnimateChance = 50;
         public const double MaxSpeed = 1.0;
         public const int TagChance = 35;
+        public const int TagColorChance = 40;
         public const int EffectChance = 25;
         public const int IconEffectChance = 15;
 
@@ -223,6 +233,9 @@ namespace NamePlate.Shared
 
         /// <summary>A clan tag shown before the name, or null.</summary>
         public string Tag;
+
+        /// <summary>The tag's color: "#RRGGBB", <see cref="TagColors.Name"/>, or null for gray.</summary>
+        public string TagColor;
 
         /// <summary>One of <see cref="NameEffectKinds"/>, or null.</summary>
         public string Effect;
@@ -334,8 +347,14 @@ namespace NamePlate.Shared
                 look.Reverse = rng.Next(2) == 1;
             }
 
+            // The draw stays, so everything drawn after it is where it was; the icon itself is the
+            // pool's best match for the name (see PickIcon)
             var icons = rules.Icons ?? new string[0];
-            look.Icon = icons.Length > 0 ? icons[rng.Next(icons.Length)] : null;
+            if (icons.Length > 0)
+            {
+                rng.Next(icons.Length);
+                look.Icon = PickIcon(name.Trim(), icons);
+            }
 
             // The extras come last, each drawing the same numbers whether it fires or not, so turning
             // one on or off, or up or down, never changes the rest of a look
@@ -365,6 +384,14 @@ namespace NamePlate.Shared
             if (look.Icon != null && iconEffects.Length > 0 && iconRoll < rules.IconEffectChance)
             {
                 look.IconEffect = iconEffects[iconPick];
+            }
+
+            // A colored tag: one of the name's colors, or the name's colors running through it
+            var tagColorRoll = rng.Next(100);
+            var tagColorPick = rng.Next(look.Colors.Length + 1);
+            if (look.Tag != null && tagColorRoll < rules.TagColorChance)
+            {
+                look.TagColor = tagColorPick == look.Colors.Length ? TagColors.Name : look.Colors[tagColorPick];
             }
 
             return look;
@@ -402,6 +429,33 @@ namespace NamePlate.Shared
 
             var h = max == r ? (g - b) / d % 6 : max == g ? (b - r) / d + 2 : (r - g) / d + 4;
             return Wrap(h * 60);
+        }
+
+        /// <summary>
+        /// The icon scoring highest for this name (each icon scored by a hash of name and icon).
+        /// Adding icons to the pool only moves the names a new icon now wins, and taking one out
+        /// only moves the names it had; picking by index moved every bot whenever the pool changed.
+        /// </summary>
+        public static string PickIcon(string name, string[] icons)
+        {
+            string best = null;
+            var bestScore = 0UL;
+            foreach (var icon in icons)
+            {
+                // FNV-1a alone barely stirs the last characters, where icon paths differ; the
+                // SplitMix64 finish spreads them over every bit
+                var score = (ulong)Hash(name + "\n" + icon);
+                score = (score ^ (score >> 30)) * 0xBF58476D1CE4E5B9UL;
+                score = (score ^ (score >> 27)) * 0x94D049BB133111EBUL;
+                score ^= score >> 31;
+                if (best == null || score > bestScore || (score == bestScore && string.CompareOrdinal(icon, best) < 0))
+                {
+                    best = icon;
+                    bestScore = score;
+                }
+            }
+
+            return best;
         }
 
         /// <summary>FNV-1a over the name's UTF-16 code units: the same on every runtime.</summary>

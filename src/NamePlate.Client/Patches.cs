@@ -52,15 +52,25 @@ public static class GetDataByMemberCategoryPatch
 [HarmonyPatch(typeof(ChatSpecialIcon), nameof(ChatSpecialIcon.Show), typeof(EMemberCategory), typeof(string), typeof(bool), typeof(int))]
 public static class ChatSpecialIconShowPatch
 {
-    public static void Postfix(ChatSpecialIcon __instance, EMemberCategory category, bool isNameColored)
+    public static void Postfix(ChatSpecialIcon __instance, EMemberCategory category, string playerName, bool isNameColored)
     {
         try
         {
             var label = __instance._specialLabel;
             if (IconTable.OthersScope)
             {
-                NameColorizer.Attach(label, null);
-                IconAnimator.Attach(__instance._icon, null);
+                // Someone else: the look they share, if they run the mod too; else the game's
+                var shared = SharedLooks.For(null, playerName ?? IconTable.OthersName);
+                NameColorizer.AttachStyle(label, isNameColored ? shared?.Tagged : null);
+                if (shared?.Icon != null && __instance._icon != null)
+                {
+                    BotLooks.ShowIcon(__instance._icon, shared);
+                }
+                else
+                {
+                    IconAnimator.Attach(__instance._icon, null);
+                }
+
                 return;
             }
 
@@ -102,8 +112,10 @@ public static class ChatSpecialIconShowPatch
 [HarmonyPatch(typeof(PlayerNamePanel), nameof(PlayerNamePanel.Set), typeof(bool), typeof(EMemberCategory), typeof(string), typeof(int), typeof(int))]
 public static class PlayerNamePanelPatch
 {
-    // Someone else's panel (the death screen's killer) is drawn with the game's own icons
-    public static void Prefix(string nickname, out bool __state) => __state = LocalPlayer.Enter(!LocalPlayer.IsYou(nickname));
+    // Someone else's panel (the death screen's killer) is drawn with the game's own icons, or the
+    // look that player shares
+    public static void Prefix(string nickname, out LocalPlayer.Scope __state) =>
+        __state = LocalPlayer.Enter(!LocalPlayer.IsYou(nickname), nickname);
 
     public static void Postfix(PlayerNamePanel __instance, bool showDetails, EMemberCategory category, string nickname)
     {
@@ -113,6 +125,7 @@ public static class PlayerNamePanelPatch
             {
                 NameColorizer.Attach(__instance._name, null);
                 NameColorizer.Attach(__instance._description, null);
+                BotLooks.ApplyTo(__instance, SharedLooks.For(null, nickname), nickname);
                 return;
             }
 
@@ -126,7 +139,7 @@ public static class PlayerNamePanelPatch
         }
     }
 
-    public static System.Exception Finalizer(System.Exception __exception, bool __state) => LocalPlayer.Leave(__exception, __state);
+    public static System.Exception Finalizer(System.Exception __exception, LocalPlayer.Scope __state) => LocalPlayer.Leave(__exception, __state);
 }
 
 /// <summary>
@@ -195,24 +208,37 @@ public static class DeathScreenPatch
         AccessTools.GetDeclaredMethods(typeof(EFT.UI.SessionEnd.SessionResultExitStatus))
             .First(m => m.Name == nameof(EFT.UI.SessionEnd.SessionResultExitStatus.Show) && m.GetParameters().Length == 7);
 
-    public static void Postfix(EFT.UI.SessionEnd.SessionResultExitStatus __instance, Profile activeProfile)
+    public static void Postfix(EFT.UI.SessionEnd.SessionResultExitStatus __instance, Profile activeProfile, ExitStatus exitStatus)
     {
         try
         {
+            // The profile keeps its last aggressor after a raid you survive, so only a death counts
             var panel = __instance._killerNamePanel;
-            var aggressor = activeProfile?.EftStats?.Aggressor;
+            var aggressor = exitStatus == ExitStatus.Killed ? activeProfile?.EftStats?.Aggressor : null;
             if (panel == null || aggressor == null)
             {
+                Marker.Set(panel != null ? panel._name : null, null);
                 return;
             }
 
+            if (Nemesis.IsPmc(aggressor.Role, aggressor.Side))
+            {
+                Nemesis.Count(aggressor.Name, aggressor.ProfileId, BotLooks.SideOf(aggressor.Side), activeProfile.EftStats.LastSessionDate);
+            }
+
             // Anyone else was already put back to the game's own look by PlayerNamePanelPatch,
-            // which also clears the last raid's bot colors off this reused panel
-            var look = BotLooks.IsPmcBot(aggressor.Role) ? BotLooks.For(aggressor.Name, BotLooks.SideOf(aggressor.Side), aggressor.ProfileId) : null;
+            // which also clears the last raid's bot colors off this reused panel. A real player
+            // (Fika) gets the look they share.
+            var look = BotLooks.IsPmcBot(aggressor.Role)
+                ? BotLooks.For(aggressor.Name, BotLooks.SideOf(aggressor.Side), aggressor.ProfileId)
+                : SharedLooks.For(aggressor.ProfileId, aggressor.Name);
             if (look != null)
             {
                 BotLooks.ApplyTo(panel, look, panel._name != null ? panel._name.text : null);
             }
+
+            // Last, so it sits after the tag too
+            Nemesis.MarkKiller(panel._name, Nemesis.IsPmc(aggressor.Role, aggressor.Side) ? aggressor.Name : null);
         }
         catch (System.Exception e)
         {
@@ -232,8 +258,11 @@ public static class KillListPatch
         try
         {
             // Rows are reused, so a row without a look is put back to plain
-            var look = knownName && victim != null && BotLooks.IsPmcBot(victim.Role) ? BotLooks.For(victim.Name, BotLooks.SideOf(victim.Side), victim.ProfileId) : null;
+            var look = !knownName || victim == null ? null
+                : BotLooks.IsPmcBot(victim.Role) ? BotLooks.For(victim.Name, BotLooks.SideOf(victim.Side), victim.ProfileId)
+                : SharedLooks.For(victim.ProfileId, victim.Name);
             NameColorizer.AttachStyle(__instance._name, look?.Tagged);
+            Nemesis.MarkVictim(__instance._name, knownName && victim != null && Nemesis.IsPmc(victim.Role, victim.Side) ? victim.Name : null);
         }
         catch (System.Exception e)
         {

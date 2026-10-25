@@ -39,6 +39,15 @@ public static class IconTable
     /// </summary>
     public static bool OthersScope;
 
+    /// <summary>Who that someone else is, when the place drawing them says (for the look they share).</summary>
+    public static string OthersName;
+
+    // Each category's icons.json entry, for the look you share with other players
+    private static readonly Dictionary<EMemberCategory, IconEntry> Entries = new();
+
+    /// <summary>Your icons.json entry for a category, or null when it's the game's own.</summary>
+    public static IconEntry EntryFor(EMemberCategory category) => Entries.TryGetValue(category, out var entry) ? entry : null;
+
     /// <summary>
     /// The game's own answer for a category, from its original rows: the same search
     /// GetDataByMemberCategory does, over the table as it was before icons.json.
@@ -72,7 +81,9 @@ public static class IconTable
         return original.Rows.FirstOrDefault(r => r.Category == target);
     }
 
-    private static readonly Dictionary<string, Sprite> LoadedSprites = new();
+    // PNGs as loaded, with their file's write time. Their textures are never unloaded, so a reload
+    // keeps the ones whose file hasn't changed rather than piling up copies on every editor save.
+    private static readonly Dictionary<string, (Sprite Sprite, DateTime Written)> LoadedSprites = new();
 
     // Animated icons: every frame of a strip, by any of its frames
     private static readonly Dictionary<Sprite, Sprite[]> Strips = new();
@@ -98,6 +109,7 @@ public static class IconTable
 
     /// <summary>The prestige badge for a category: null (the game's), "hide", or a PNG path.</summary>
     public static string PrestigeFor(EMemberCategory category) => Prestige.TryGetValue(category, out var value) ? value : null;
+
     private static bool _dumped;
 
     public static bool IsCustom(EMemberCategory category) => !Enum.IsDefined(typeof(EMemberCategory), category);
@@ -127,10 +139,15 @@ public static class IconTable
     /// </summary>
     public static void Reload()
     {
-        LoadedSprites.Clear();
-        Strips.Clear();
+        // Strips stay: they're keyed by sprite, and the unchanged sprites kept here still need theirs
+        foreach (var changed in LoadedSprites.Where(p => WrittenAt(p.Key) != p.Value.Written).Select(p => p.Key).ToList())
+        {
+            LoadedSprites.Remove(changed);
+        }
+
         Motions.Clear();
         Prestige.Clear();
+        Entries.Clear();
         Named.Clear();
         Styles.Clear();
         Customized.Clear();
@@ -182,6 +199,7 @@ public static class IconTable
                 }
 
                 Customized.Add(category);
+                Entries[category] = entry;
                 if (!string.IsNullOrEmpty(entry.Name))
                 {
                     row.Name = entry.Name;
@@ -210,7 +228,7 @@ public static class IconTable
 
                 if (!string.IsNullOrEmpty(entry.Icon))
                 {
-                    var sprite = LoadSprite(entry.Icon);
+                    var sprite = FileSprite(entry.Icon);
                     if (sprite != null)
                     {
                         row.IconSprite = sprite;
@@ -297,9 +315,6 @@ public static class IconTable
         return true;
     }
 
-    /// <summary>A PNG under the plugin folder as a sprite (an animated one's first frame), loaded once.</summary>
-    public static Sprite FileSprite(string relativePath) => LoadSprite(relativePath);
-
     /// <summary>The game's own picture for a member category, whatever icons.json changed.</summary>
     public static Sprite GameSprite(EMemberCategory category)
     {
@@ -320,11 +335,12 @@ public static class IconTable
         return null;
     }
 
-    private static Sprite LoadSprite(string relativePath)
+    /// <summary>A PNG under the plugin folder as a sprite (an animated one's first frame), loaded once.</summary>
+    public static Sprite FileSprite(string relativePath)
     {
         if (LoadedSprites.TryGetValue(relativePath, out var cached))
         {
-            return cached;
+            return cached.Sprite;
         }
 
         var path = Path.Combine(Plugin.Folder, relativePath);
@@ -334,6 +350,7 @@ public static class IconTable
             return null;
         }
 
+        var written = File.GetLastWriteTimeUtc(path);
         var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = relativePath, filterMode = FilterMode.Bilinear };
         if (!texture.LoadImage(File.ReadAllBytes(path)))
         {
@@ -363,10 +380,13 @@ public static class IconTable
         }
 
         var sprite = frames[0];
-        LoadedSprites[relativePath] = sprite;
+        LoadedSprites[relativePath] = (sprite, written);
         Plugin.Log.LogInfo($"Loaded icon {relativePath} ({texture.width}x{texture.height})");
         return sprite;
     }
+
+    // A missing file reads as 1601, so it counts as changed
+    private static DateTime WrittenAt(string relativePath) => File.GetLastWriteTimeUtc(Path.Combine(Plugin.Folder, relativePath));
 
     /// <summary>
     /// originals\: each game icon as a PNG plus table.json with their names and colors, for the

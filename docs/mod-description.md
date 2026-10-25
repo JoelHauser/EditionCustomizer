@@ -12,10 +12,11 @@ too, so the names you run into aren't all plain gray.
 - One color, a gradient, or a different color for every letter
 - Animations: scroll, pulse, wave, sparkle, rainbow, glitch and bounce
 - Outline, glow, drop shadow and italic
-- A clan tag in front of your name, like **[EZ] YourName**
+- A clan tag in front of your name, like **[EZ] YourName**, in any color
+- **Surprise me**: a random look in one click
 
 **Your icon**
-- Any of the game's ~1,100 icons, 107 extra icons (12 animated), or your own PNG
+- Any of the game's ~1,100 icons, 244 extra icons (32 animated), or your own PNG
 - Make brand-new icons, or recolor the existing ones (Standard, Edge of Darkness, Unheard…)
 - Icon effects: pulse, glow, flip and float
 - Hide the prestige badge, or swap it for your own picture
@@ -39,9 +40,15 @@ too, so the names you run into aren't all plain gray.
 - Messages: "your item was bought by…"
 - Dogtags you take, on the item and in the inspect window
 
+**Other players (Fika)**
+- Friends who also run Name Plate see your look, and you see theirs: friends list and chat, invites, death screen, kill list, dogtags and flea offers
+
 Every bot's look comes from its name, so you'll recognize the same PMC from raid to raid. About a
 third wear a clan tag, drawn from nearly 500 like **[EZ]**, **[L2P]**, **[1V9]** or **[GGEZ]**.
-Traders, system messages and real players always keep the game's own look.
+Traders and system messages keep the game's own look.
+
+**Nemesis**: a PMC that keeps killing you is marked **NEMESIS** on the death screen, and when you
+finally get them, the kill list says **REVENGE**.
 
 ## How to use it
 
@@ -63,9 +70,15 @@ you choose how many bots get a look and what they can use, or turn bot looks off
 
 ## Good to know
 
-- **Fika:** built to run alongside it; real players never get bot looks. Other players see your look only if they also run Name Plate.
+- **Fika:** every player needs Name Plate, and the host's server needs its server part (it's in the same zip). Real players never get bot looks. You can stop sharing your look on the editor's **Profile** page.
 - Works with Bot Callsigns Reloaded, Realistic PMC Names and MoxoPixel's Menu Overhaul.
 - **Updating from Edition Customizer?** It's the same mod, renamed. Move your `icons.json` from
   `BepInEx/plugins/ChangeIcons` to `BepInEx/plugins/NamePlate`, then delete the old ChangeIcons folders and `ChangeIcons Editor.exe`.
+
+## Found a bug?
+
+Post it in the comments or on [GitHub](https://github.com/JoelHauser/EditionCustomizer/issues) with your
+`BepInEx/LogOutput.log`. For Fika look sharing, send the log from both players plus the host's server
+console: lines starting with **[Sharing]** show what was sent, received and drawn.
 
 Based on Evgencheg's Tarkov-Change-Icons. Source: https://github.com/JoelHauser/EditionCustomizer

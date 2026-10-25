@@ -1,9 +1,10 @@
 # Name Plate
 
 Make your name stand out in Escape from Tarkov (SPT 4.1). Give your nickname colors, gradients,
-animations, a glow and a clan tag. Pick any icon from the game, from a library of 107 extra icons
-(12 of them animated) or from a picture of your own. PMC bots get looks of their own too, so the
-names on the death screen, the flea market and the dogtags you take aren't all plain gray.
+animations, a glow and a clan tag. Pick any icon from the game, from a library of 244 extra icons
+(32 of them animated) or from a picture of your own. PMC bots get looks of their own too, so the
+names on the death screen, the flea market and the dogtags you take aren't all plain gray. With
+Fika, friends who run the mod see your look and you see theirs.
 
 Everything is set up in **Name Plate.exe**, an editor with a live preview:
 
@@ -19,11 +20,12 @@ Everything is set up in **Name Plate.exe**, an editor with a live preview:
 - One color, a gradient across the name, or a color per letter.
 - Animations: scroll, pulse, wave, sparkle, rainbow, glitch and bounce, at any speed and in either direction.
 - Effects: outline, glow, drop shadow and italic.
-- A clan tag of up to 5 letters or digits: `[EZ] YourName`.
+- A clan tag of up to 5 letters or digits: `[EZ] YourName`, in gray, a color of its own, or the name's colors.
+- **Surprise me** rolls a whole random look; press it until one sticks.
 - Optionally, your scav's name wears the same look.
 
 **Your icon**
-- Any of the game's own icons (about 1,100 are read straight out of the game files), the 107 library icons, or your own PNGs.
+- Any of the game's own icons (about 1,100 are read straight out of the game files), the 244 library icons, or your own PNGs.
 - Recolor the game's member icons, or add brand-new ones next to Standard, Edge of Darkness, Unheard and the rest.
 - Animated icons, plus icon effects: pulse, glow, flip and float.
 - Hide the prestige badge or swap it for a picture of your own.
@@ -44,9 +46,17 @@ Everything is set up in **Name Plate.exe**, an editor with a live preview:
 | Flea market seller names | PMC bots, matching the PMC of the same name |
 | Messages: "your item was bought by…" | the buyer |
 | Dogtags you take, on the tile and in the inspect window | the PMC bot it came from |
+| Lobby, group and chat lists, invites, death screen, kill list, dogtags (Fika) | the other player's own look, if they run the mod |
 
-Traders, system messages, chat bots and other real players always keep the game's own look. A
-game icon you change (say, Edge of Darkness) changes only for you, never for everyone who has it.
+Traders, system messages and chat bots always keep the game's own look, and so do other players
+who don't run the mod. A game icon you change (say, Edge of Darkness) changes only for you, never
+for everyone who has it.
+
+## Nemesis
+
+A PMC that kills you twice (bot or real player) is marked **NEMESIS** on the death screen, with
+the count. Kill someone who has killed you and the kill list says **REVENGE**. The Bots page shows
+who has killed you most and sets how many deaths it takes, or turns it off.
 
 ## Using the editor
 
@@ -68,7 +78,7 @@ Bots are on out of the box. Each bot's look comes from its name, so the same bot
 in every raid, and nothing is stored on bots or profiles. They draw from every library icon and
 the member icons, with 24 color presets plus made-up color schemes:
 - About half of them have animated names.
-- About a third wear a clan tag. There are 487 of them, like `[EZ]`, `[L2P]` or `[1V9]`, so two bots rarely share one.
+- About a third wear a clan tag. There are 487 of them, like `[EZ]`, `[L2P]` or `[1V9]`, so two bots rarely share one. Some tags are colored.
 - Some get name effects and icon effects.
 
 The **Bots** page sets how many bots get a look and which icons, animations and effects they can
@@ -92,7 +102,7 @@ Unpack `NamePlate-<version>.zip` into your SPT folder (the one with `EscapeFromT
 Name Plate.exe                                   the editor
 SPT_Runtime/user/mods/NamePlate/NamePlate.dll    server mod (the chat command)
 BepInEx/plugins/NamePlate/NamePlate.Client.dll   client plugin (icons, colors, bots)
-BepInEx/plugins/NamePlate/icons/library/*.png    107 extra icons
+BepInEx/plugins/NamePlate/icons/library/*.png    244 extra icons
 ```
 
 The zip has no `icons.json`, so updating never overwrites your looks.
@@ -120,7 +130,7 @@ The editor's Profile page does this for you, but the server mod also takes chat 
 - `spt membercategory`: what you have now
 - `spt membercategory list`: what you can add
 - `spt membercategory unheard+uniqueid+2048`: set your icons by name or number. 2048 and up are new icons you made in the editor.
-- `spt membercategory default`: back to what your game edition has
+- `spt membercategory default`: back to what your game edition comes with
 
 Restart the game fully after a change. Trader, Group, System and other service flags can't be set,
 because they break the profile.
@@ -134,7 +144,8 @@ ChangeIcons does, so you can remove ChangeIcons.
 - **Fika:** checked against Fika 2.4.4 at the code level; not yet tested in a live co-op session.
   - The two never patch the same thing in conflicting ways, and custom icon flags travel through Fika's profile sync untouched.
   - Real players are never given bot looks. Human PMCs carry a different role from bot PMCs, and the plugin remembers the people it meets in raids and on your friends list (`players.json`).
-  - Other players see your look only if they run the mod; without it, they see the Standard icon. If the host lists this mod as required, everyone needs the same version.
+  - Looks are shared through the host's server: each game sends its own look when it changes and fetches everyone else's (`looks.json` in the server mod's folder; your own pictures go along, the library ones don't need to). Turn it off on the editor's Profile page.
+  - Other players see your look only if they run the mod; without it, they see the game's look. If the host lists this mod as required, everyone needs the same version.
   - Fika's nameplates for its own developers borrow the Developer and Edge of Darkness pictures, so a picture you changed there shows on those plates too.
 - **MoxoPixel's Menu Overhaul:** its main-screen name gets your icon and colors when the icon you show is one you've changed.
 - **Limit:** the settings dropdown draws its small icon from a fixed sprite sheet. There, a new icon shows as its name only, and a replaced icon keeps the game's small picture.
@@ -151,13 +162,20 @@ python scripts/make_app_icon.py       # the editor's icon
 
 - Needs the .NET 10 SDK.
 - The client plugin compiles against the install's patched `Assembly-CSharp`, so that SPT install must have been launched once. This is also why only the server mod builds on GitHub Actions.
-- To make a release zip, run `.\scripts\package.ps1 -SPTPath C:\SPT -Version 1.0.0`. It writes `dist\NamePlate-1.0.0.zip`.
+- The version is set once, in `Directory.Build.props`. To make a release zip, run `.\scripts\package.ps1 -SPTPath C:\SPT`; it writes `dist\NamePlate-<version>.zip`.
 
 How it works, for anyone reading the code:
 - The game's member icons live in one table (`ChatSpecialIconSettings`). The plugin edits that table and adds rows for new flags (2048, 4096, …).
 - Name colors are drawn by recoloring TextMeshPro's vertices.
 - Bot looks are worked out in `src/Shared/BotLooks.cs`. The plugin and the editor compile the same file, so the editor's preview matches the game.
 - The editor reads the game's files with [AssetsTools.NET](https://github.com/nesrak1/AssetsTools.NET). `src/NamePlate.Editor/Assets/classdata.tpk` is its class database, from [UABEA](https://github.com/nesrak1/UABEA) (MIT).
+
+## Reporting a bug
+
+Open an issue with your `BepInEx/LogOutput.log`. For Fika look sharing, attach the log from both
+players and the host's server console. The plugin's lines starting with `[Sharing]` say what it sent,
+what the server holds, who in your raid shares a look, and whose look it drew; the server prints a
+`Name Plate:` line each time someone's look arrives.
 
 ## Credits
 

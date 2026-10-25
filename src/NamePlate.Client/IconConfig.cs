@@ -10,10 +10,11 @@ namespace NamePlate.Client;
 public class IconConfig
 {
     /// <summary>
-    /// Writes every icon the game ships to originals\ as a PNG, to use as a template.
+    /// Writes every member icon the game ships to originals\ as a PNG, to use as a template. Off
+    /// unless asked for: the editor reads the game's icons itself.
     /// </summary>
     [JsonProperty("dumpOriginalIcons")]
-    public bool DumpOriginalIcons = true;
+    public bool DumpOriginalIcons;
 
     [JsonProperty("icons")]
     public List<IconEntry> Icons = new();
@@ -24,6 +25,16 @@ public class IconConfig
     /// <summary>Your scav's name gets your look too (the game counts it as someone else).</summary>
     [JsonProperty("scavLook")]
     public bool ScavLook;
+
+    /// <summary>
+    /// Other players on your server who run the mod (Fika) see your look; off, they see the
+    /// game's. Theirs show for you either way.
+    /// </summary>
+    [JsonProperty("shareLook")]
+    public bool ShareLook = true;
+
+    [JsonProperty("nemesis")]
+    public NemesisConfig Nemesis;
 
     public static IconConfig Load(string path) =>
         JsonConvert.DeserializeObject<IconConfig>(File.ReadAllText(path)) ?? new IconConfig();
@@ -70,7 +81,7 @@ public class IconEntry
     [JsonProperty("animate")]
     public float Animate;
 
-    /// <summary>"scroll" (default), "pulse", "wave" or "sparkle".</summary>
+    /// <summary>"scroll" (default), "pulse", "wave", "sparkle", "rainbow", "glitch" or "bounce" (Shared.Motions).</summary>
     [JsonProperty("motion")]
     public string Motion;
 
@@ -114,6 +125,10 @@ public class IconEntry
     /// <summary>A clan tag shown before your name, "[TAG] Name". Without brackets.</summary>
     [JsonProperty("tag")]
     public string Tag;
+
+    /// <summary>The tag's color: "#RRGGBB", or "name" to paint it with the name's colors. Missing: a quiet gray.</summary>
+    [JsonProperty("tagColor")]
+    public string TagColor;
 
     /// <summary>Frames per second when the icon PNG is a strip of square frames side by side.</summary>
     [JsonProperty("fps")]
@@ -166,7 +181,7 @@ public class BotConfig
     public double MaxSpeed = 1.0;
 
     /// <summary>
-    /// Which motions bots may use ("scroll", "pulse", "wave", "sparkle"); missing means all. No
+    /// Which of Shared.Motions bots may use; missing means all. No
     /// default list here: Newtonsoft adds to an existing list instead of replacing it.
     /// </summary>
     [JsonProperty("motions")]
@@ -175,6 +190,10 @@ public class BotConfig
     /// <summary>Percent of bots with a look that also wear a clan tag.</summary>
     [JsonProperty("tagChance")]
     public int TagChance = Shared.BotDefaults.TagChance;
+
+    /// <summary>Percent of tagged bots whose tag is colored (one of the name's colors, or all of them) rather than gray.</summary>
+    [JsonProperty("tagColorChance")]
+    public int TagColorChance = Shared.BotDefaults.TagColorChance;
 
     /// <summary>Tags to pick from; missing means the built-in list (Shared.BotTags).</summary>
     [JsonProperty("tags")]

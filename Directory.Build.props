@@ -1,0 +1,22 @@
+<Project>
+  <!--
+    The one version number for the server mod, the plugin and the editor. Each project also gets it
+    as a constant, ModVersion.Value (BepInPlugin and the server's metadata need a compile-time
+    value), and scripts/package.ps1 names the zip after it.
+  -->
+  <PropertyGroup>
+    <Version>1.1.0</Version>
+  </PropertyGroup>
+
+  <Target Name="WriteModVersion" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <ModVersionFile>$(IntermediateOutputPath)ModVersion.g.cs</ModVersionFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(ModVersionFile)" Overwrite="true" WriteOnlyWhenDifferent="true"
+                      Lines="namespace $(RootNamespace) { internal static class ModVersion { public const string Value = &quot;$(Version)&quot;%3B } }" />
+    <ItemGroup>
+      <Compile Include="$(ModVersionFile)" />
+      <FileWrites Include="$(ModVersionFile)" />
+    </ItemGroup>
+  </Target>
+</Project>

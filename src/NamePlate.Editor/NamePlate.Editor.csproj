@@ -9,12 +9,11 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>NamePlate.Editor</RootNamespace>
     <AssemblyName>NamePlate.Editor</AssemblyName>
-    <Version>1.0.1</Version>
     <!-- Drawn by scripts/make_app_icon.py -->
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
 
     <!--
-      One exe, so it can sit in BepInEx\plugins\NamePlate without BepInEx trying to load a DLL:
+      One exe, shipped as "Name Plate.exe" in the SPT folder itself (scripts/package.ps1):
         dotnet publish -c Release -o dist/editor
     -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

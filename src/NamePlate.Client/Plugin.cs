@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace NamePlate.Client;
 
-[BepInPlugin("com.mybutthasarash.nameplate", "Name Plate", "1.0.1")]
+[BepInPlugin("com.mybutthasarash.nameplate", "Name Plate", ModVersion.Value)]
 // This mod before it was renamed (Edition Customizer / ChangeIcons): both copies would patch the same
 // things, so BepInEx loads only one and says why
 [BepInIncompatibility("com.mybutthasarash.editioncustomizer")]
@@ -32,8 +32,9 @@ public class Plugin : BaseUnityPlugin
         Folder = Path.GetDirectoryName(Info.Location);
         _configPath = Path.Combine(Folder, "icons.json");
 
-        Settings = LoadConfig() ?? new IconConfig { DumpOriginalIcons = false };
+        Settings = LoadConfig() ?? new IconConfig();
         RealPlayers.Load(Folder);
+        Nemesis.Load(Folder);
         BotLooks.Configure(Settings.Bots);
         var harmony = new Harmony("com.mybutthasarash.nameplate");
         harmony.PatchAll(typeof(Plugin).Assembly);
@@ -76,6 +77,7 @@ public class Plugin : BaseUnityPlugin
 
     private void Update()
     {
+        SharedLooks.Tick();
         if (_changed)
         {
             // Wait for the burst of events one save makes to settle

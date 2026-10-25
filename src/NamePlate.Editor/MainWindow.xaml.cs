@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -41,8 +42,7 @@ public partial class MainWindow : Window
     private string _nickname = "Nickname";
     private readonly Random _random = new();
 
-    // The preview's animated icon: frames and effect, played by a timer while there is something to play
-    private readonly DispatcherTimer _iconTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+    // The preview's animated icon: frames and effect, played on the frame loop (MainWindow.Extras)
     private IReadOnlyList<BitmapSource> _iconFrames = [];
     private EditableIcon? _iconPlaying;
     private static readonly DateTime IconClock = DateTime.UtcNow;
@@ -89,7 +89,7 @@ public partial class MainWindow : Window
         CopyButton.Click += (_, _) => AddIcon(copyOf: Current);
         RemoveButton.Click += (_, _) => RemoveCurrent();
 
-        NameBox.TextChanged += (_, _) => Edit(i => i.Name = string.IsNullOrWhiteSpace(NameBox.Text) ? null : NameBox.Text.Trim());
+        NameBox.TextChanged += (_, _) => Edit(i => i.Name = string.IsNullOrWhiteSpace(NameBox.Text) ? null : NameBox.Text.Trim(), undoGroup: "name");
         SolidMode.Checked += (_, _) => SetMode(NameMode.Solid);
         GradientMode.Checked += (_, _) => SetMode(NameMode.Gradient);
         LettersMode.Checked += (_, _) => SetMode(NameMode.Letters);
@@ -108,8 +108,23 @@ public partial class MainWindow : Window
             radio.Checked += (_, _) => Edit(i => i.Motion = motion);
         }
 
-        TagBox.TextChanged += (_, _) => Edit(i => i.Tag = CleanTag(TagBox.Text));
+        TagBox.TextChanged += (_, _) =>
+        {
+            Edit(i => i.Tag = CleanTag(TagBox.Text), undoGroup: "tag");
+            TagColorRow.Visibility = CleanTag(TagBox.Text) != null ? Visibility.Visible : Visibility.Collapsed;
+        };
         RandomTagButton.Click += (_, _) => TagBox.Text = Shared.BotTags.All[_random.Next(Shared.BotTags.All.Length)];
+        TagGray.Checked += (_, _) => Edit(i => i.TagColor = null, reshow: true);
+        TagName.Checked += (_, _) => Edit(i => i.TagColor = Shared.TagColors.Name, reshow: true);
+        TagOwn.Checked += (_, _) => Edit(i =>
+        {
+            if (!Images.TryParseColor(i.TagColor, out _))
+            {
+                i.TagColor = FirstColor(i);
+            }
+        }, reshow: true);
+        TagColorChip.Click += (_, _) => PickEffectColor(TagColorChip, i => i.TagColor, (i, c) => i.TagColor = c);
+        SurpriseButton.Click += (_, _) => Surprise();
         CopyCodeButton.Click += (_, _) => CopyCode();
         PasteCodeButton.Click += (_, _) => PasteCode();
 
@@ -134,14 +149,14 @@ public partial class MainWindow : Window
         FpsSlider.ValueChanged += (_, _) =>
         {
             FpsText.Text = $"{FpsSlider.Value:0} frames/s";
-            Edit(i => i.Fps = Math.Round(FpsSlider.Value));
+            Edit(i => i.Fps = Math.Round(FpsSlider.Value), undoGroup: "fps");
         };
-        _iconTimer.Tick += (_, _) => PlayIcon();
-        _galleryTimer.Tick += (_, _) => PlayGalleries();
-        _galleryTimer.Start();
+        Closed += (_, _) => StopFrameLoop();
 
-        ScavSwitch.Checked += (_, _) => SetScavLook(true);
-        ScavSwitch.Unchecked += (_, _) => SetScavLook(false);
+        ScavSwitch.Checked += (_, _) => SetFileOption(f => f.ScavLook = true);
+        ScavSwitch.Unchecked += (_, _) => SetFileOption(f => f.ScavLook = false);
+        ShareSwitch.Checked += (_, _) => SetFileOption(f => f.ShareLook = true);
+        ShareSwitch.Unchecked += (_, _) => SetFileOption(f => f.ShareLook = false);
 
         ReverseSwitch.Checked += (_, _) => Edit(i => i.Reverse = true);
         ReverseSwitch.Unchecked += (_, _) => Edit(i => i.Reverse = false);
@@ -152,7 +167,7 @@ public partial class MainWindow : Window
             UpdateSpeedText();
             if (AnimateSwitch.IsChecked == true)
             {
-                Edit(i => i.Animate = SpeedSlider.Value);
+                Edit(i => i.Animate = SpeedSlider.Value, undoGroup: "speed");
             }
         };
 
@@ -162,7 +177,7 @@ public partial class MainWindow : Window
         {
             if (Current is { } icon)
             {
-                ColorPicker.Open(TintChip, Images.ParseOr(icon.Tint, Colors.White), c => Edit(i => i.Tint = Images.ToHex(c), reshow: true));
+                ColorPicker.Open(TintChip, Images.ParseOr(icon.Tint, Colors.White), c => Edit(i => i.Tint = Images.ToHex(c), reshow: true, undoGroup: "tint"));
             }
         };
         OwnIconButton.Click += (_, _) => Edit(i =>
@@ -177,6 +192,38 @@ public partial class MainWindow : Window
         }
 
         SearchBox.TextChanged += (_, _) => ShowGallery();
+        SearchBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Escape)
+            {
+                SearchBox.Clear();
+                e.Handled = true;
+            }
+        };
+
+        // Ctrl+S saves anywhere; Ctrl+Z undoes icon changes (a text box keeps Ctrl+Z for its own typing)
+        KeyDown += (_, e) =>
+        {
+            if (Keyboard.Modifiers != ModifierKeys.Control)
+            {
+                return;
+            }
+
+            if (e.Key == Key.S)
+            {
+                if (SaveButton.IsEnabled)
+                {
+                    Save();
+                }
+
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Z && IconsPage.Visibility == Visibility.Visible)
+            {
+                Undo();
+                e.Handled = true;
+            }
+        };
         LargeSwitch.Checked += (_, _) => ShowGallery();
         LargeSwitch.Unchecked += (_, _) => ShowGallery();
         RereadButton.Click += async (_, _) => await ReadGame();
@@ -311,9 +358,10 @@ public partial class MainWindow : Window
                 Title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        _settingScav = true;
+        _settingOptions = true;
         ScavSwitch.IsChecked = _file.ScavLook;
-        _settingScav = false;
+        ShareSwitch.IsChecked = _file.ShareLook;
+        _settingOptions = false;
         BuildPresets();
 
         foreach (var value in Categories.WithIcons.Where(v => icons.All(i => i.Value != v)))
@@ -413,6 +461,7 @@ public partial class MainWindow : Window
         }
         else
         {
+            RememberForUndo(item);
             var icon = item.Icon;
             icon.Name = icon.GameIcon = icon.File = icon.Tint = null;
             icon.Colors.Clear();
@@ -421,7 +470,7 @@ public partial class MainWindow : Window
             icon.Motion = Shared.Motions.Scroll;
             icon.Reverse = false;
             icon.Source = IconSource.Own;
-            icon.Outline = icon.Glow = icon.Tag = icon.IconEffect = icon.Prestige = null;
+            icon.Outline = icon.Glow = icon.Tag = icon.TagColor = icon.IconEffect = icon.Prestige = null;
             icon.Shadow = icon.Bold = icon.Italic = icon.SmallCaps = false;
             icon.Fps = 8;
             Refresh(item);
@@ -470,6 +519,14 @@ public partial class MainWindow : Window
             {
                 TagBox.Text = icon.Tag ?? "";
             }
+
+            var ownTagColor = Images.TryParseColor(icon.TagColor, out var tagColor);
+            TagColorRow.Visibility = icon.Tag != null ? Visibility.Visible : Visibility.Collapsed;
+            TagGray.IsChecked = icon.TagColor == null;
+            TagName.IsChecked = icon.TagColor == Shared.TagColors.Name;
+            TagOwn.IsChecked = ownTagColor;
+            TagColorChip.Visibility = ownTagColor ? Visibility.Visible : Visibility.Collapsed;
+            TagColorChip.Background = new SolidColorBrush(tagColor);
 
             OutlineSwitch.IsChecked = icon.Outline != null;
             OutlineChip.Visibility = icon.Outline != null ? Visibility.Visible : Visibility.Collapsed;
@@ -521,14 +578,19 @@ public partial class MainWindow : Window
         UpdatePreview();
     }
 
-    /// <summary>Applies a change to the selected icon and shows it everywhere.</summary>
-    private void Edit(Action<EditableIcon> change, bool reshow = false)
+    /// <summary>
+    /// Applies a change to the selected icon and shows it everywhere. <paramref name="undoGroup"/> names a
+    /// control that changes continuously (a slider, a text box, a color being picked): its changes in quick
+    /// succession are one undo step. Without one, every change is a step of its own.
+    /// </summary>
+    private void Edit(Action<EditableIcon> change, bool reshow = false, string? undoGroup = null)
     {
         if (_loading || IconList.SelectedItem is not IconItem item)
         {
             return;
         }
 
+        RememberForUndo(item, undoGroup);
         change(item.Icon);
         Refresh(item);
         MarkDirty();
@@ -540,6 +602,69 @@ public partial class MainWindow : Window
         {
             UpdatePreview();
         }
+    }
+
+    // ---------------------------------------------------------------- Undo
+
+    // Icons as they were before each change, newest last. Changes from one continuous control to one
+    // icon within a moment of each other (a slider dragged, a name typed) are one step.
+    private readonly List<(IconItem Item, EditableIcon Before)> _undo = [];
+    private IconItem? _undoItem;
+    private string? _undoGroup;
+    private DateTime _undoAt;
+    private const int UndoSteps = 100;
+
+    private void RememberForUndo(IconItem item, string? group = null)
+    {
+        var now = DateTime.UtcNow;
+        if (group != null && group == _undoGroup && item == _undoItem && now - _undoAt < TimeSpan.FromMilliseconds(900))
+        {
+            _undoAt = now;
+            return;
+        }
+
+        _undo.Add((item, item.Icon.Clone()));
+        if (_undo.Count > UndoSteps)
+        {
+            _undo.RemoveAt(0);
+        }
+
+        _undoItem = item;
+        _undoGroup = group;
+        _undoAt = now;
+    }
+
+    private void Undo()
+    {
+        // Steps for icons removed since are skipped
+        while (_undo.Count > 0)
+        {
+            var (item, before) = _undo[^1];
+            _undo.RemoveAt(_undo.Count - 1);
+            if (!_items.Contains(item))
+            {
+                continue;
+            }
+
+            item.Icon = before;
+            _undoItem = null;
+            _undoGroup = null;
+            Refresh(item);
+            if (IconList.SelectedItem == item)
+            {
+                ShowCurrent();
+            }
+            else
+            {
+                IconList.SelectedItem = item;
+            }
+
+            MarkDirty();
+            SetStatus(_undo.Count > 0 ? "Undone. Ctrl+Z again to go further back." : "Undone. Nothing older to undo.");
+            return;
+        }
+
+        SetStatus("Nothing to undo");
     }
 
     private void SetMode(NameMode mode)
@@ -598,7 +723,7 @@ public partial class MainWindow : Window
                     {
                         ic.Colors[i] = Images.ToHex(c);
                     }
-                });
+                }, undoGroup: $"color{i}");
                 GameColorButton.Visibility = !icon.IsCustom ? Visibility.Visible : Visibility.Collapsed;
             });
 
@@ -655,7 +780,7 @@ public partial class MainWindow : Window
             icon.Glow != null ? Images.ParseOr(icon.Glow, Colors.White) : null,
             icon.Shadow && icon.Glow == null, icon.Bold, icon.Italic, icon.SmallCaps);
         var mode = parsed.Count > 1 ? icon.Mode : NameMode.Solid;
-        return new NameLook(parsed, mode, icon.Animate, icon.Motion, icon.Reverse, fx.Any ? fx : null, icon.Tag);
+        return new NameLook(parsed, mode, icon.Animate, icon.Motion, icon.Reverse, fx.Any ? fx : null, icon.Tag, icon.TagColor);
     }
 
     // Letters and digits only, as a tag reads in game; empty for none
@@ -672,21 +797,22 @@ public partial class MainWindow : Window
             ColorPicker.Open(chip, Images.ParseOr(get(icon), Colors.White), c =>
             {
                 chip.Background = new SolidColorBrush(c);
-                Edit(i => set(i, Images.ToHex(c)));
+                Edit(i => set(i, Images.ToHex(c)), undoGroup: chip.Name);
             });
         }
     }
 
-    private bool _settingScav;
+    private bool _settingOptions;
 
-    private void SetScavLook(bool on)
+    // A setting of the whole file (your scav, sharing, nemesis) rather than of one icon
+    private void SetFileOption(Action<IconsFile> change)
     {
-        if (_settingScav)
+        if (_settingOptions)
         {
             return;
         }
 
-        _file.ScavLook = on;
+        change(_file);
         MarkDirty();
     }
 
@@ -752,21 +878,25 @@ public partial class MainWindow : Window
 
         _thumbLoad?.Cancel();
         _gallery.Clear();
-        var search = GameTab.IsChecked == true ? SearchBox.Text.Trim() : "";
-        bool Match(string name) => search.Length == 0 || name.Contains(search, StringComparison.OrdinalIgnoreCase);
+
+        // Every tab: the library alone is a couple of hundred icons. "animated-" isn't part of a name.
+        var search = SearchBox.Text.Trim();
+        bool Match(string name) => search.Length == 0 || name.Replace("animated-", "").Replace('-', ' ').Contains(search, StringComparison.OrdinalIgnoreCase)
+                                   || name.Contains(search, StringComparison.OrdinalIgnoreCase);
 
         GameBar.Visibility = GameTab.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         var items = new List<GalleryItem>();
 
         if (LibraryTab.IsChecked == true)
         {
-            items.AddRange(Categories.WithIcons.Where(v => _game.MemberIconFile(v) != null)
+            items.AddRange(Categories.WithIcons.Where(v => _game.MemberIconFile(v) != null && Match(Categories.Label(v)))
                 .Select(v => new GalleryItem(Categories.Label(v), _game.MemberIconFile(v)!, v)));
-            items.AddRange(Pngs("icons/library").Where(p => !IsAnimated(p)).Select(p => new GalleryItem(Path.GetFileNameWithoutExtension(p), p, null)));
+            items.AddRange(Pngs("icons/library").Where(p => !IsAnimated(p) && Match(Path.GetFileNameWithoutExtension(p)))
+                .Select(p => new GalleryItem(Path.GetFileNameWithoutExtension(p), p, null)));
         }
         else if (AnimatedTab.IsChecked == true)
         {
-            items.AddRange(Pngs("icons/library").Concat(Pngs("icons")).Concat(Pngs("icons/imported")).Where(IsAnimated)
+            items.AddRange(Pngs("icons/library").Concat(Pngs("icons")).Concat(Pngs("icons/imported")).Where(p => Match(Path.GetFileNameWithoutExtension(p)) && IsAnimated(p))
                 .Select(p => new GalleryItem(Path.GetFileNameWithoutExtension(p), p, null)));
         }
         else if (GameTab.IsChecked == true)
@@ -806,7 +936,14 @@ public partial class MainWindow : Window
                 }
 
                 var frames = ThumbnailFrames(Path.Combine(folder, item.Path));
-                Dispatcher.InvokeAsync(() => item.SetFrames(frames), DispatcherPriority.Background);
+                Dispatcher.InvokeAsync(() =>
+                {
+                    item.SetFrames(frames);
+                    if (item.Animated)
+                    {
+                        EnsureFrameLoop();
+                    }
+                }, DispatcherPriority.Background);
             }
         });
     }
@@ -892,8 +1029,10 @@ public partial class MainWindow : Window
             return false;
         }
 
-        // The editor reads the game's icons itself now, so the plugin needn't copy them out
-        var file = new IconsFile { DumpOriginalIcons = false, ScavLook = _file.ScavLook, Presets = _file.Presets };
+        var file = new IconsFile
+        {
+            DumpOriginalIcons = _file.DumpOriginalIcons, ScavLook = _file.ScavLook, ShareLook = _file.ShareLook, Nemesis = _file.Nemesis, Presets = _file.Presets,
+        };
         try
         {
             foreach (var icon in _items.Select(i => i.Icon).Where(i => i.IsChanged))
@@ -985,9 +1124,13 @@ public partial class MainWindow : Window
         IconsPage.Visibility = !profile && !bots ? Visibility.Visible : Visibility.Collapsed;
         BotsPage.Visibility = bots ? Visibility.Visible : Visibility.Collapsed;
         ProfilePage.Visibility = profile ? Visibility.Visible : Visibility.Collapsed;
+
+        // The page shown may have things to play; the loop stops itself if not
+        EnsureFrameLoop();
         if (bots)
         {
             RefreshBotPreview();
+            ShowNemesis();
         }
 
         if (profile)
@@ -1163,7 +1306,8 @@ public abstract class Notifying : INotifyPropertyChanged
 
 public class IconItem(EditableIcon icon) : Notifying
 {
-    public EditableIcon Icon { get; } = icon;
+    /// <summary>Replaced as a whole by Undo.</summary>
+    public EditableIcon Icon { get; set; } = icon;
     public string DisplayName { get; private set; } = "";
     public NameLook Look { get; private set; } = NameLook.Solid(Colors.White);
     public ImageSource? Thumbnail { get; private set; }

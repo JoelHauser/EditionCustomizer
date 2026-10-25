@@ -156,6 +156,14 @@ public class NameColorizer : MonoBehaviour
             _rangeStart = prefix.Length;
             _rangeLength = _expected.Length - prefix.Length;
             _colorPrefix = true;
+
+            // A tag in the name's colors is colored as the name's first letters
+            if (style.TagInName)
+            {
+                _rangeStart = 0;
+                _rangeLength = _expected.Length;
+                _colorPrefix = false;
+            }
         }
 
         ApplyEffects(_allowEffects ? style.Effects : null);
@@ -472,12 +480,12 @@ public class NameColorizer : MonoBehaviour
 
             if (!InRange(ch.index))
             {
-                // A tag of ours before the name: its own quiet color
+                // A tag of ours before the name: its own color, a quiet gray unless set
                 if (_colorPrefix && ch.index < _rangeStart)
                 {
                     for (var k = 0; k < 4; k++)
                     {
-                        Color32 c = TagColor;
+                        Color32 c = _style.TagColor ?? TagColor;
                         c.a = colors[v + k].a;
                         colors[v + k] = c;
                     }

@@ -21,7 +21,7 @@
         <Border Background="{StaticResource BgBrush}" BorderBrush="#2A2A2A" BorderThickness="0,0,0,1" Padding="18,0">
             <DockPanel Height="56">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Image x:Name="Logo" Source="Assets/logo.png" Width="22" Height="22" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <Image Source="Assets/logo.png" Width="22" Height="22" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality" />
                     <TextBlock Text="Name Plate" FontFamily="{StaticResource Heading}" FontWeight="SemiBold" FontSize="15"
                                Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" Margin="28,0,0,0" Height="56">
@@ -33,7 +33,7 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,18,0" />
                     <Button x:Name="SptButton" Style="{StaticResource GhostBtn}" Margin="0,0,14,0"/>
-                    <Button x:Name="SaveButton" Style="{StaticResource AccentBtn}" Content="Save" IsEnabled="False" />
+                    <Button x:Name="SaveButton" Style="{StaticResource AccentBtn}" Content="Save" IsEnabled="False" ToolTip="Save (Ctrl+S). Ctrl+Z undoes icon changes." />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -121,36 +121,52 @@
                     </Grid>
                 </Border>
 
-                <ScrollViewer x:Name="EditorScroll" Grid.Row="1" Margin="26,16,10,16" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" Margin="26,16,10,16" VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,0,16,0">
 
                         <!-- NAME -->
                         <Border Style="{StaticResource Card}">
-                            <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" x:Name="SlotText" Style="{StaticResource Caption}" VerticalAlignment="Center" />
-                                <TextBlock Style="{StaticResource CardTitle}" Text="Name" Margin="0,0,24,0" VerticalAlignment="Center" />
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBox x:Name="NameBox" Width="300"
-                                             ToolTip="What the settings dropdown calls this icon. Your nickname itself stays as it is." />
-                                    <TextBlock Text="Tag" Margin="28,0,10,0" VerticalAlignment="Center" Foreground="{StaticResource SecondaryBrush}" />
-                                    <TextBox x:Name="TagBox" Width="110" Tag="None" MaxLength="5"
-                                             ToolTip="A clan tag before your name: [TAG] Nickname. Leave empty for none." />
-                                    <Button x:Name="RandomTagButton" Style="{StaticResource GhostBtn}" Content="Random" Margin="6,0,0,0"
-                                            ToolTip="Pick one from the bots' tag list" />
+                            <StackPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" x:Name="SlotText" Style="{StaticResource Caption}" VerticalAlignment="Center" />
+                                    <TextBlock Style="{StaticResource CardTitle}" Text="Name" Margin="0,0,24,0" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox x:Name="NameBox" Width="300"
+                                                 ToolTip="What the settings dropdown calls this icon. Your nickname itself stays as it is." />
+                                        <TextBlock Text="Tag" Margin="28,0,10,0" VerticalAlignment="Center" Foreground="{StaticResource SecondaryBrush}" />
+                                        <TextBox x:Name="TagBox" Width="110" Tag="None" MaxLength="5"
+                                                 ToolTip="A clan tag before your name: [TAG] Nickname. Leave empty for none." />
+                                        <Button x:Name="RandomTagButton" Style="{StaticResource GhostBtn}" Content="Random" Margin="6,0,0,0"
+                                                ToolTip="Pick one from the bots' tag list" />
+                                    </StackPanel>
+                                </DockPanel>
+                                <StackPanel x:Name="TagColorRow" Orientation="Horizontal" Margin="0,14,0,0">
+                                    <TextBlock Text="Tag color" Width="80" VerticalAlignment="Center" Foreground="{StaticResource SecondaryBrush}" />
+                                    <Border Style="{StaticResource SegmentGroup}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <RadioButton x:Name="TagGray" Style="{StaticResource Segment}" Content="Gray" GroupName="TagColor" ToolTip="Quieter than the name, as the game would" />
+                                            <RadioButton x:Name="TagName" Style="{StaticResource Segment}" Content="Name's colors" GroupName="TagColor" ToolTip="The name's colors run through the tag too" />
+                                            <RadioButton x:Name="TagOwn" Style="{StaticResource Segment}" Content="Pick" GroupName="TagColor" ToolTip="A color of its own" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Button x:Name="TagColorChip" Width="36" Height="28" Margin="10,0,0,0" Padding="0" ToolTip="Click to change the tag's color" />
                                 </StackPanel>
-                            </DockPanel>
+                            </StackPanel>
                         </Border>
 
                         <!-- NAME COLOR -->
                         <Border Style="{StaticResource Card}">
                             <StackPanel>
                                 <DockPanel>
-                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
-                                        <Button x:Name="GameColorButton" Style="{StaticResource GhostBtn}" Content="Use the game's color" />
-                                        <Button x:Name="CopyCodeButton" Style="{StaticResource GhostBtn}" Content="Copy code"
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,-4,0,0">
+                                        <Button x:Name="GameColorButton" Style="{StaticResource ToolBtn}" Tag="&#xE7A7;" Content="Game's color" Margin="0,0,8,0"
+                                                ToolTip="Back to the color the game gives this icon" />
+                                        <Button x:Name="CopyCodeButton" Style="{StaticResource ToolBtn}" Tag="&#xE8C8;" Content="Copy code" Margin="0,0,8,0"
                                                 ToolTip="Copy this look as a code to share; anyone with the mod can paste it" />
-                                        <Button x:Name="PasteCodeButton" Style="{StaticResource GhostBtn}" Content="Paste code"
+                                        <Button x:Name="PasteCodeButton" Style="{StaticResource ToolBtn}" Tag="&#xE77F;" Content="Paste code" Margin="0,0,8,0"
                                                 ToolTip="Give this icon a look from a code someone shared" />
+                                        <Button x:Name="SurpriseButton" Style="{StaticResource TintBtn}" Tag="&#xE8B1;" Content="Surprise me"
+                                                ToolTip="A random look: colors, animation, effect, tag and picture, the way bots get theirs. Press again for another." />
                                     </StackPanel>
                                     <TextBlock Style="{StaticResource CardTitle}" Text="Nickname color" />
                                 </DockPanel>
@@ -170,7 +186,7 @@
                                            Visibility="{Binding IsChecked, ElementName=PresetsButton, Converter={StaticResource BoolToVis}}" />
                                 <WrapPanel x:Name="ColorChips" />
 
-                                <StackPanel x:Name="MultiPanel">
+                                <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                                         <ToggleButton x:Name="AnimateSwitch" Style="{StaticResource Switch}" Content="Animate" />
                                         <StackPanel Orientation="Horizontal" Visibility="{Binding IsChecked, ElementName=AnimateSwitch, Converter={StaticResource BoolToVis}}">
@@ -178,7 +194,7 @@
                                             <TextBlock x:Name="SpeedText" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Width="80" />
                                         </StackPanel>
                                     </StackPanel>
-                                    <StackPanel x:Name="MotionPanel" Orientation="Horizontal" Margin="0,12,0,0"
+                                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0"
                                                 Visibility="{Binding IsChecked, ElementName=AnimateSwitch, Converter={StaticResource BoolToVis}}">
                                         <Border Style="{StaticResource SegmentGroup}">
                                             <StackPanel Orientation="Horizontal">
@@ -248,9 +264,9 @@
                                             </StackPanel>
                                             </Border>
                                         </DockPanel>
-                                        <StackPanel x:Name="GameBar" DockPanel.Dock="Top" Margin="0,0,0,10">
-                                            <TextBox x:Name="SearchBox" Tag="Search by name" FontSize="13" />
-                                            <DockPanel Margin="0,8,0,0">
+                                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                            <TextBox x:Name="SearchBox" Tag="Search icons by name (Esc clears)" FontSize="13" />
+                                            <DockPanel x:Name="GameBar" Margin="0,8,0,0">
                                                 <Button x:Name="RereadButton" DockPanel.Dock="Right" Style="{StaticResource GhostBtn}" Content="Read again" ToolTip="Read the images from the game again (after a game update)" />
                                                 <ToggleButton x:Name="LargeSwitch" DockPanel.Dock="Right" Style="{StaticResource Switch}" Content="Big images" Margin="0,0,16,0" />
                                                 <TextBlock x:Name="GameCountText" Style="{StaticResource Hint}" VerticalAlignment="Center" />
@@ -324,11 +340,45 @@
                                 <Slider x:Name="TagSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
                                 <TextBlock x:Name="TagText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                                        Visibility="{Binding IsChecked, ElementName=BotsSwitch, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Colored tags" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="TagColorSlider" Width="260" Minimum="0" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="5" VerticalAlignment="Center" />
+                                <TextBlock x:Name="TagColorText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
                             <ToggleButton x:Name="FactionSwitch" Style="{StaticResource Switch}" Margin="0,14,0,0" Content="Faction colors: warm for BEAR, cool for USEC"
                                           Visibility="{Binding IsChecked, ElementName=BotsSwitch, Converter={StaticResource BoolToVis}}"
                                           ToolTip="Where the game says a bot's side: the death screen, the kill list and dogtags. Flea sellers have no side." />
                             <TextBlock Style="{StaticResource Hint}" Margin="0,14,0,0" Text="Worked out from each bot's name, so a name looks the same in every raid."
                                        ToolTip="Shows on the death screen, the kill list, dogtags and flea sellers. Works with Bot Callsigns Reloaded and Realistic PMC Names: they only decide which names bots get." />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- NEMESIS: not only bots (Fika players count too), so outside the bots switch -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Nemesis" />
+                            <ToggleButton x:Name="NemesisSwitch" Style="{StaticResource Switch}" Content="Mark the PMCs that keep killing you"
+                                          ToolTip="NEMESIS on the death screen once a PMC has killed you often enough, REVENGE in the kill list when you get one back." />
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0"
+                                        Visibility="{Binding IsChecked, ElementName=NemesisSwitch, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="Nemesis after" Width="150" VerticalAlignment="Center" />
+                                <Slider x:Name="NemesisSlider" Width="260" Minimum="1" Maximum="5" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center" />
+                                <TextBlock x:Name="NemesisText" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Caption}" Text="Who has killed you most" Margin="0,16,0,6" />
+                            <TextBlock x:Name="NemesisNone" Style="{StaticResource Hint}" Text="Nobody yet. Counted from the next PMC that kills you." />
+                            <ItemsControl x:Name="NemesisList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Height="30">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Tag}" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center" />
+                                            <Image Source="{Binding Thumbnail}" Width="18" Height="18" StretchDirection="DownOnly" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <local:StyledName Text="{Binding DisplayName}" Look="{Binding Look}" FontSize="15" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
 
@@ -511,8 +561,10 @@
 
                     <Border Style="{StaticResource Card}">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource CardTitle}" Text="Your scav" />
+                            <TextBlock Style="{StaticResource CardTitle}" Text="Your look elsewhere" />
                             <ToggleButton x:Name="ScavSwitch" Style="{StaticResource Switch}" Content="Show my scav's name with my look" />
+                            <ToggleButton x:Name="ShareSwitch" Style="{StaticResource Switch}" Margin="0,12,0,0" Content="Show my look to other players on my server"
+                                          ToolTip="With Fika, friends who also run Name Plate see your colors, tag and icon. Theirs show for you either way." />
                             <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="Saved with Save at the top, like your icons." />
                         </StackPanel>
                     </Border>

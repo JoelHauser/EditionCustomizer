@@ -17,11 +17,10 @@ public partial class MainWindow
     private const int SampleCount = 14;
 
     private BotsConfig _bots = new();
-    private BotNames.Pool _namePool = new([], "");
+    private BotNames.Pool _namePool = new([], new Dictionary<string, string>(), "");
     private readonly ObservableCollection<GalleryItem> _botIcons = [];
     private readonly ObservableCollection<BotSample> _samples = [];
     private readonly List<string> _sampleNames = [];
-    private readonly Random _shuffle = new();
     private bool _botsLoading;
 
     private void WireBots()
@@ -49,6 +48,11 @@ public partial class MainWindow
         }
 
         TagSlider.ValueChanged += (_, _) => BotsEdit(b => b.TagChance = (int)Math.Round(TagSlider.Value));
+        TagColorSlider.ValueChanged += (_, _) => BotsEdit(b => b.TagColorChance = (int)Math.Round(TagColorSlider.Value));
+
+        NemesisSwitch.Checked += (_, _) => NemesisEdit(n => n.Enabled = true);
+        NemesisSwitch.Unchecked += (_, _) => NemesisEdit(n => n.Enabled = false);
+        NemesisSlider.ValueChanged += (_, _) => NemesisEdit(n => n.After = (int)Math.Round(NemesisSlider.Value));
         BotEffectSlider.ValueChanged += (_, _) => BotsEdit(b => b.EffectChance = (int)Math.Round(BotEffectSlider.Value));
         BotIconFxSlider.ValueChanged += (_, _) => BotsEdit(b => b.IconEffectChance = (int)Math.Round(BotIconFxSlider.Value));
         foreach (var toggle in BotEffectToggles)
@@ -127,6 +131,10 @@ public partial class MainWindow
             BotsSwitch.IsChecked = _bots.Enabled;
             ShareSlider.Value = _bots.Share;
             TagSlider.Value = _bots.TagChance;
+            TagColorSlider.Value = _bots.TagColorChance;
+            var nemesis = _file.Nemesis ?? new IconsFile.NemesisConfig();
+            NemesisSwitch.IsChecked = nemesis.Enabled;
+            NemesisSlider.Value = nemesis.After;
             BotEffectSlider.Value = _bots.EffectChance;
             BotIconFxSlider.Value = _bots.IconEffectChance;
             foreach (var toggle in BotEffectToggles)
@@ -186,6 +194,7 @@ public partial class MainWindow
 
         UpdateBotTexts();
         RefreshBotPreview();
+        EnsureFrameLoop();
     }
 
     private static string BotIconEntry(GalleryItem item) =>
@@ -202,6 +211,58 @@ public partial class MainWindow
         MarkDirty();
         UpdateBotTexts();
         RefreshBotPreview();
+    }
+
+    // The nemesis settings are the file's, not the bots section's: they count real players too
+    private void NemesisEdit(Action<IconsFile.NemesisConfig> change)
+    {
+        if (_botsLoading)
+        {
+            return;
+        }
+
+        change(_file.Nemesis ??= new IconsFile.NemesisConfig());
+        MarkDirty();
+        UpdateBotTexts();
+    }
+
+    /// <summary>Who has killed you most, from the plugin's nemesis.json, each in the look they have in game.</summary>
+    private void ShowNemesis()
+    {
+        var killers = new List<(string Name, int Deaths, string? Side)>();
+        try
+        {
+            var path = System.IO.Path.Combine(_pluginFolder, "nemesis.json");
+            if (System.IO.File.Exists(path))
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(path));
+                if (doc.RootElement.TryGetProperty("killers", out var list) && list.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    foreach (var killer in list.EnumerateObject())
+                    {
+                        var deaths = killer.Value.TryGetProperty("deaths", out var d) && d.TryGetInt32(out var n) ? n : 0;
+                        var side = killer.Value.TryGetProperty("side", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.String ? s.GetString() : null;
+                        killers.Add((killer.Name, deaths, side));
+                    }
+                }
+            }
+        }
+        catch (Exception e) when (e is System.Text.Json.JsonException or System.IO.IOException or UnauthorizedAccessException)
+        {
+            // Being written by the game, or not one of ours: show none this time
+        }
+
+        var after = (_file.Nemesis ?? new IconsFile.NemesisConfig()).After;
+        var rows = killers.Where(k => k.Deaths > 0).OrderByDescending(k => k.Deaths).ThenBy(k => k.Name, StringComparer.OrdinalIgnoreCase).Take(8)
+            .Select(k =>
+            {
+                var (look, icon, _) = PreviewBot(k.Name, k.Side);
+                var count = k.Deaths == 1 ? "1 death" : $"{k.Deaths} deaths";
+                return new BotSample(k.Name, look, icon, k.Deaths >= after ? $"NEMESIS · {count}" : count);
+            })
+            .ToList();
+        NemesisList.ItemsSource = rows;
+        NemesisNone.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private ToggleButton[] BotEffectToggles => [BotFxOutline, BotFxGlow, BotFxShadow, BotFxBold, BotFxItalic, BotFxCaps];
@@ -263,6 +324,9 @@ public partial class MainWindow
         BotEffectText.Text = $"{_bots.EffectChance}% of names";
         BotIconFxText.Text = $"{_bots.IconEffectChance}% of icons";
         TagText.Text = $"{_bots.TagChance}% of them · {(_bots.Tags ?? [.. BotTags.All]).Count} tags";
+        TagColorText.Text = $"{_bots.TagColorChance}% of tags";
+        var after = (_file.Nemesis ?? new IconsFile.NemesisConfig()).After;
+        NemesisText.Text = after == 1 ? "the first death" : $"{after} deaths to the same PMC";
         BotAnimateText.Text = $"{_bots.AnimateChance}% of names";
         BotSpeedText.Text = $"{_bots.MaxSpeed:0.00} loops/s";
         var presetsOn = BotPresetPanel.Children.OfType<ToggleButton>().Count(t => t.IsChecked == true);
@@ -279,7 +343,7 @@ public partial class MainWindow
     {
         _sampleNames.Clear();
         var pool = _namePool.Names;
-        foreach (var index in Enumerable.Range(0, pool.Count).OrderBy(_ => _shuffle.Next()).Take(SampleCount))
+        foreach (var index in Enumerable.Range(0, pool.Count).OrderBy(_ => _random.Next()).Take(SampleCount))
         {
             _sampleNames.Add(pool[index]);
         }
@@ -314,8 +378,11 @@ public partial class MainWindow
         };
     }
 
-    /// <summary>What the plugin will draw for a PMC bot of this name.</summary>
-    private (NameLook Look, BitmapSource? Icon, string Tag) PreviewBot(string name)
+    /// <summary>
+    /// What the plugin will draw for a PMC bot of this name on the death screen. Names from the
+    /// pool are on the side their list is for, so faction colors show; any other name has no side.
+    /// </summary>
+    private (NameLook Look, BitmapSource? Icon, string Tag) PreviewBot(string name, string? side = null)
     {
         var plainIcon = Images.Load(System.IO.Path.Combine(_pluginFolder, _game.MemberIconFile(0) ?? "-"));
         var plain = (NameLook.Solid(Images.ParseOr(StandardGray, Colors.Gray)), plainIcon, "Plain");
@@ -324,7 +391,7 @@ public partial class MainWindow
             return plain;
         }
 
-        var look = BotLookGenerator.For(name, _bots.ToRules());
+        var look = BotLookGenerator.For(name, _bots.ToRules(), side ?? _namePool.Sides.GetValueOrDefault(name));
         if (look == null)
         {
             return plain;
@@ -343,7 +410,7 @@ public partial class MainWindow
             NameEffectKinds.SmallCaps => new NameFx(SmallCaps: true),
             _ => null,
         };
-        var nameLook = new NameLook(colors, mode, look.Speed, look.Motion, look.Reverse, fx, look.Tag);
+        var nameLook = new NameLook(colors, mode, look.Speed, look.Motion, look.Reverse, fx, look.Tag, look.TagColor);
 
         BitmapSource? icon = plainIcon;
         if (look.Icon is { } entry)

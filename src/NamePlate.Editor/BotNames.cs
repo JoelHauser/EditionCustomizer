@@ -9,13 +9,19 @@ namespace NamePlate.Editor;
 /// </summary>
 public static class BotNames
 {
-    public record Pool(List<string> Names, string Source);
+    /// <param name="Sides">Each name's side as the look generator names it (BotLookGenerator.Bear/Usec), for faction colors.</param>
+    public record Pool(List<string> Names, IReadOnlyDictionary<string, string> Sides, string Source);
+
+    private const string Usec = Shared.BotLookGenerator.Usec;
+    private const string Bear = Shared.BotLookGenerator.Bear;
 
     public static Pool Load(string sptPath)
     {
-        var names = new List<string>();
+        var names = new List<(string Name, string Side)>();
         var sources = new List<string>();
         var mods = Path.Combine(sptPath, "SPT_Runtime", "user", "mods");
+
+        void Add(string path, string? property, string side) => names.AddRange(Strings(path, property).Select(n => (n, side)));
 
         if (Directory.Exists(mods))
         {
@@ -26,10 +32,10 @@ public static class BotNames
                 if (File.Exists(Path.Combine(nameData, "usec_new.json")))
                 {
                     var before = names.Count;
-                    names.AddRange(Strings(Path.Combine(nameData, "usec_new.json"), "Names"));
-                    names.AddRange(Strings(Path.Combine(nameData, "bear_new.json"), "Names"));
-                    names.AddRange(Strings(Path.Combine(nameData, "userDefinedNames.json"), "UsecNames"));
-                    names.AddRange(Strings(Path.Combine(nameData, "userDefinedNames.json"), "BearNames"));
+                    Add(Path.Combine(nameData, "usec_new.json"), "Names", Usec);
+                    Add(Path.Combine(nameData, "bear_new.json"), "Names", Bear);
+                    Add(Path.Combine(nameData, "userDefinedNames.json"), "UsecNames", Usec);
+                    Add(Path.Combine(nameData, "userDefinedNames.json"), "BearNames", Bear);
                     if (names.Count > before)
                     {
                         sources.Add("Bot Callsigns Reloaded");
@@ -41,8 +47,8 @@ public static class BotNames
                 if (File.Exists(Path.Combine(config, "u_names.json")) && File.Exists(Path.Combine(config, "b_names.json")))
                 {
                     var before = names.Count;
-                    names.AddRange(Strings(Path.Combine(config, "u_names.json"), null));
-                    names.AddRange(Strings(Path.Combine(config, "b_names.json"), null));
+                    Add(Path.Combine(config, "u_names.json"), null, Usec);
+                    Add(Path.Combine(config, "b_names.json"), null, Bear);
                     if (names.Count > before)
                     {
                         sources.Add("Realistic PMC Names");
@@ -54,13 +60,19 @@ public static class BotNames
         if (names.Count == 0)
         {
             var types = Path.Combine(sptPath, "SPT_Runtime", "SPT_Data", "database", "bots", "types");
-            names.AddRange(Strings(Path.Combine(types, "usec.json"), "firstName"));
-            names.AddRange(Strings(Path.Combine(types, "bear.json"), "firstName"));
+            Add(Path.Combine(types, "usec.json"), "firstName", Usec);
+            Add(Path.Combine(types, "bear.json"), "firstName", Bear);
             sources.Add("SPT's own PMC names");
         }
 
-        var distinct = names.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        return new Pool(distinct, string.Join(" + ", sources));
+        // A name on both sides keeps the first
+        var sides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, side) in names.Where(n => !string.IsNullOrWhiteSpace(n.Name)))
+        {
+            sides.TryAdd(name.Trim(), side);
+        }
+
+        return new Pool([.. sides.Keys], sides, string.Join(" + ", sources));
     }
 
     // A JSON array of strings, at the root or under one property

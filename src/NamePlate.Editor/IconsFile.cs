@@ -61,6 +61,9 @@ public class EditableIcon
     /// <summary>Clan tag before the name, without brackets; null for none.</summary>
     public string? Tag;
 
+    /// <summary>The tag's color: null for gray, "name" for the name's colors, or "#RRGGBB".</summary>
+    public string? TagColor;
+
     /// <summary>Frames per second, for an animated icon (a strip of frames).</summary>
     public double Fps = 8;
 
@@ -86,7 +89,7 @@ public class EditableIcon
 public class IconsFile
 {
     [JsonPropertyName("dumpOriginalIcons")]
-    public bool DumpOriginalIcons { get; set; } = true;
+    public bool DumpOriginalIcons { get; set; }
 
     [JsonPropertyName("icons")]
     public List<Entry> Icons { get; set; } = [];
@@ -97,6 +100,21 @@ public class IconsFile
     /// <summary>Your scav's name gets your look too.</summary>
     [JsonPropertyName("scavLook")]
     public bool ScavLook { get; set; }
+
+    /// <summary>Other players on your server who run the mod see your look.</summary>
+    [JsonPropertyName("shareLook")]
+    public bool ShareLook { get; set; } = true;
+
+    [JsonPropertyName("nemesis")]
+    public NemesisConfig? Nemesis { get; set; }
+
+    public class NemesisConfig
+    {
+        [JsonPropertyName("enabled")] public bool Enabled { get; set; } = true;
+
+        /// <summary>Deaths to one PMC before they're marked NEMESIS.</summary>
+        [JsonPropertyName("after")] public int After { get; set; } = 2;
+    }
 
     /// <summary>Your own color presets, for the editor (the plugin doesn't read them).</summary>
     [JsonPropertyName("presets")]
@@ -128,6 +146,7 @@ public class IconsFile
         [JsonPropertyName("italic")] public bool? Italic { get; set; }
         [JsonPropertyName("smallCaps")] public bool? SmallCaps { get; set; }
         [JsonPropertyName("tag")] public string? Tag { get; set; }
+        [JsonPropertyName("tagColor")] public string? TagColor { get; set; }
         [JsonPropertyName("fps")] public double? Fps { get; set; }
         [JsonPropertyName("iconEffect")] public string? IconEffect { get; set; }
         [JsonPropertyName("prestige")] public string? Prestige { get; set; }
@@ -219,6 +238,7 @@ public class IconsFile
             Shadow = entry.Glow == null && (entry.Shadow ?? false),
             Italic = entry.Italic ?? false,
             Tag = Shared.BotTags.Clean(entry.Tag),
+            TagColor = string.IsNullOrWhiteSpace(entry.TagColor) ? null : entry.TagColor.Trim(),
             Fps = entry.Fps is > 0 ? entry.Fps.Value : 8,
             IconEffect = string.IsNullOrWhiteSpace(entry.IconEffect) ? null : entry.IconEffect.Trim().ToLowerInvariant(),
             Prestige = string.IsNullOrWhiteSpace(entry.Prestige) ? null : entry.Prestige.Trim(),
@@ -293,6 +313,7 @@ public class IconsFile
         entry.Shadow = icon.Shadow && icon.Glow == null ? true : null;
         entry.Italic = icon.Italic ? true : null;
         entry.Tag = icon.Tag;
+        entry.TagColor = icon.Tag != null ? icon.TagColor : null;
         entry.IconEffect = icon.IconEffect;
         entry.Prestige = icon.Prestige;
 
@@ -390,6 +411,7 @@ public class BotsConfig
     [JsonPropertyName("maxSpeed")] public double MaxSpeed { get; set; } = 1.0;
     [JsonPropertyName("motions")] public List<string> Motions { get; set; } = [.. Shared.Motions.All];
     [JsonPropertyName("tagChance")] public int TagChance { get; set; } = Shared.BotDefaults.TagChance;
+    [JsonPropertyName("tagColorChance")] public int TagColorChance { get; set; } = Shared.BotDefaults.TagColorChance;
     [JsonPropertyName("tags")] public List<string>? Tags { get; set; }
     [JsonPropertyName("factionColors")] public bool FactionColors { get; set; }
     [JsonPropertyName("effectChance")] public int EffectChance { get; set; } = Shared.BotDefaults.EffectChance;
@@ -425,6 +447,7 @@ public class BotsConfig
         MaxSpeed = MaxSpeed,
         Motions = [.. Motions],
         TagChance = Math.Clamp(TagChance, 0, 100),
+        TagColorChance = Math.Clamp(TagColorChance, 0, 100),
         Tags = Tags?.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()).ToArray(),
         FactionColors = FactionColors,
         EffectChance = Math.Clamp(EffectChance, 0, 100),

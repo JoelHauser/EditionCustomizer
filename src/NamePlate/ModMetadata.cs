@@ -10,7 +10,7 @@ public sealed record ModMetadata : IModMetadata
     public string Name { get; init; } = "Name Plate";
     public string Author { get; init; } = "Evgencheg";
     public List<string>? Contributors { get; init; }
-    public Version Version { get; init; } = new("1.0.1");
+    public Version Version { get; init; } = new(ModVersion.Value);
     public Range SptVersion { get; init; } = new("~4.1.0");
     public bool HasPrepatcher { get; init; } = false;
     // None: SPT loads no mods at all when one is found. Sharing the chat command with ChangeIcons

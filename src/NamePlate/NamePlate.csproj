@@ -7,7 +7,6 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>NamePlate</AssemblyName>
     <RootNamespace>NamePlate</RootNamespace>
-    <Version>1.0.1</Version>
     <Authors>Evgencheg</Authors>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>

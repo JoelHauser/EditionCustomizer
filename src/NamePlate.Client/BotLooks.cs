@@ -73,6 +73,7 @@ public static class BotLooks
             MaxSpeed = config.MaxSpeed,
             Motions = motions,
             TagChance = Mathf.Clamp(config.TagChance, 0, 100),
+            TagColorChance = Mathf.Clamp(config.TagColorChance, 0, 100),
             Tags = config.Tags?.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()).ToArray(),
             FactionColors = config.FactionColors,
             EffectChance = Mathf.Clamp(config.EffectChance, 0, 100),
@@ -100,11 +101,22 @@ public static class BotLooks
 
     /// <summary>
     /// The look for a PMC bot's name, or null for the game's own. The side, when known, picks faction
-    /// colors. A real person (Fika: a friend, someone met in a raid) never gets a bot look.
+    /// colors. A real person (Fika: a friend, someone met in a raid) never gets a bot look: the
+    /// look they share if they run the mod, else none.
     /// </summary>
     public static Look For(string name, string side = null, string profileId = null)
     {
-        if (_rules == null || string.IsNullOrEmpty(name) || RealPlayers.IsReal(profileId, name))
+        if (string.IsNullOrEmpty(name))
+        {
+            return null;
+        }
+
+        if (SharedLooks.For(profileId, name) is { } shared)
+        {
+            return shared;
+        }
+
+        if (_rules == null || RealPlayers.IsReal(profileId, name))
         {
             return null;
         }
@@ -122,10 +134,16 @@ public static class BotLooks
             var effects = EffectsOf(look);
             var icon = IconFor(look.Icon);
             var frames = IconTable.FramesOf(icon);
+            var tagged = look.Tag == null && effects == null ? style : new NameStyle { Colors = style.Colors, Paint = style.Paint, Effects = effects, Tag = look.Tag };
+            if (tagged != style)
+            {
+                tagged.SetTagColor(look.TagColor);
+            }
+
             return new Look
             {
                 Style = style,
-                Tagged = look.Tag == null && effects == null ? style : new NameStyle { Colors = style.Colors, Paint = style.Paint, Effects = effects, Tag = look.Tag },
+                Tagged = tagged,
                 Icon = icon,
                 IconMotion = frames == null && look.IconEffect == null ? null
                     : new IconTable.IconMotion { Frames = frames, Effect = look.IconEffect, Tint = colors[0] },

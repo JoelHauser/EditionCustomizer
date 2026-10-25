@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using EFT;
 using EFT.InventoryLogic;
 using EFT.UI;
@@ -13,10 +14,27 @@ namespace NamePlate.Client;
 /// </summary>
 public static class Dogtags
 {
-    public static BotLooks.Look LookFor(DogtagComponent dogtag) =>
-        dogtag != null && !string.IsNullOrEmpty(dogtag.Nickname) && dogtag.Side is EPlayerSide.Bear or EPlayerSide.Usec
-            ? BotLooks.For(dogtag.Nickname, BotLooks.SideOf(dogtag.Side), dogtag.ProfileId)
-            : null;
+    // Side and profile of each dogtag a tile has shown, by name: the inspect window only has the
+    // name, and without the side its colors would differ from the tile's under faction colors
+    private static readonly Dictionary<string, (string Side, string ProfileId)> Seen = new();
+
+    public static BotLooks.Look LookFor(DogtagComponent dogtag)
+    {
+        if (dogtag == null || string.IsNullOrEmpty(dogtag.Nickname) || dogtag.Side is not (EPlayerSide.Bear or EPlayerSide.Usec))
+        {
+            return null;
+        }
+
+        var side = BotLooks.SideOf(dogtag.Side);
+        Seen[dogtag.Nickname] = (side, dogtag.ProfileId);
+        return BotLooks.For(dogtag.Nickname, side, dogtag.ProfileId);
+    }
+
+    /// <summary>The look for a dogtag known only by its name: as its tile showed it, if one has.</summary>
+    public static BotLooks.Look LookFor(string nickname) =>
+        string.IsNullOrEmpty(nickname) ? null
+        : Seen.TryGetValue(nickname, out var seen) ? BotLooks.For(nickname, seen.Side, seen.ProfileId)
+        : BotLooks.For(nickname);
 }
 
 /// <summary>The dogtag's tile in a grid, whose caption is the name once it's been examined.</summary>
@@ -64,7 +82,7 @@ public static class DogtagInspectPatch
             BotLooks.Look look = null;
             if (___ItemAttribute?.Id is EItemAttributeId id && id == EItemAttributeId.Nickname && label.gameObject.activeInHierarchy)
             {
-                look = BotLooks.For(___ItemAttribute.StringValue());
+                look = Dogtags.LookFor(___ItemAttribute.StringValue());
             }
 
             NameColorizer.AttachStyle(label, look?.Style, label.text);

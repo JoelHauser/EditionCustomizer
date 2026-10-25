@@ -1,6 +1,6 @@
 {
-  // Saves the game's own icons to originals\ as PNGs, to use as templates
-  "dumpOriginalIcons": true,
+  // true saves the game's own member icons to originals\ as PNGs, to use as templates
+  "dumpOriginalIcons": false,
 
   "icons": [
     // A new icon. Give your profile the same number with: spt membercategory unheard+uniqueid+2048
