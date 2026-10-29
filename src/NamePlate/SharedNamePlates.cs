@@ -52,7 +52,9 @@ public class SharedNamePlates(ISptLogger<SharedNamePlates> logger, ProfileHelper
     private readonly object _saveGate = new();
     private string? _path;
 
-    private string PathOnDisk => _path ??= System.IO.Path.Combine(modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly()), "shared-nameplates.json");
+    public string ModFolder => modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+
+    private string PathOnDisk => _path ??= System.IO.Path.Combine(ModFolder, "shared-nameplates.json");
 
     private bool _loaded;
 

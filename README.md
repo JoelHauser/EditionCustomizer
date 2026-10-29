@@ -143,6 +143,7 @@ ChangeIcons does, so you can remove ChangeIcons.
 ## Compatibility
 
 - **Fika:** checked against Fika 2.4.4 at the code level; not yet tested in a live co-op session.
+  - **Headless or remote host:** a Name Plate made with `Name Plate.exe` on the host reaches its player on their own PC. The host's server sends it for a new icon (2048+) the profile wears, or for any icon the editor saved to that character. A Name Plate the player makes on their own PC for the same icon wins.
   - The two never patch the same thing in conflicting ways, and custom icon flags travel through Fika's profile sync untouched.
   - Real players are never given bot Name Plates. Human PMCs carry a different role from bot PMCs, and the plugin remembers the people it meets in raids and on your friends list (`players.json`).
   - Name Plate sharing goes through the host's server: each game sends its own Name Plate when it changes and fetches everyone else's (`shared-nameplates.json` in the server mod's folder; your own pictures go along, the library ones don't need to). Turn it off on the editor's Profile page.

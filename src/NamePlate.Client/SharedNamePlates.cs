@@ -2,7 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Globalization;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EFT;
@@ -23,6 +25,9 @@ namespace NamePlate.Client;
 /// the game is connected to with its session. Answers arrive on a worker thread and are handed to
 /// the main thread, where sprites can be made. A server without the routes (an older Name Plate)
 /// costs one log line, and players keep the game's own name and icon for each other as before.
+///
+/// It also asks for your own Name Plate as made on the host: the editor run on a Fika host gives your
+/// profile an icon whose Name Plate is in the host's icons.json, not yours. Your icons.json wins.
 /// </summary>
 public static class SharedNamePlates
 {
@@ -31,6 +36,7 @@ public static class SharedNamePlates
     private const int GiveUpAfter = 3;
     private const string Library = "icons/library/";
     private const string PictureFolder = "shared";
+    private const string HostFolder = "host";
 
     private static readonly Regex Hash = new("^[0-9a-f]{40}$");
 
@@ -57,6 +63,10 @@ public static class SharedNamePlates
     private static float _nextFetch;
     private static bool _fetchBusy;
     private static bool _sendBusy;
+    private static bool _mineBusy;
+    private static bool _mineOff;
+    private static string _mineSaid;
+    private static bool _iconCheckDue;
     private static string _sent;
     private static string _ownId;
 
@@ -162,6 +172,11 @@ public static class SharedNamePlates
             }
         }
 
+        if (_iconCheckDue)
+        {
+            CheckOwnIcon();
+        }
+
         var now = Time.unscaledTime;
         if (_off || now < _nextCheck)
         {
@@ -189,6 +204,10 @@ public static class SharedNamePlates
         {
             _nextFetch = now + FetchEvery;
             FetchAll();
+            if (!_mineBusy && !_mineOff)
+            {
+                FetchMine();
+            }
         }
     }
 
@@ -270,6 +289,91 @@ public static class SharedNamePlates
             DefaultValueHandling = DefaultValueHandling.Ignore,
         }));
         return (namePlate, picture, namePlate.ToString(Formatting.None) + "|" + pictureTime);
+    }
+
+    // ---------------------------------------------------------------- yours, made on the host
+
+    private static void FetchMine()
+    {
+        _mineBusy = true;
+        Post("/nameplate/mine", "{}", "why", reply =>
+        {
+            _mineBusy = false;
+            if (reply != null)
+            {
+                TakeMine(reply);
+            }
+            else if (!_mineOff)
+            {
+                // An older server mod: not asked again this session
+                _mineOff = true;
+                Plugin.Log.LogInfo($"{Tag}The server didn't answer /nameplate/mine, so Name Plates made on the host don't reach you. "
+                    + $"The host needs Name Plate {ModVersion.Value} or later on the server");
+            }
+
+            // Answered or not, now it's known whether anyone has a Name Plate for your icon
+            _iconCheckDue = true;
+        }, optional: true);
+    }
+
+    private static void TakeMine(JObject reply)
+    {
+        var category = (int?)reply["category"] ?? 0;
+        IconEntry entry = null;
+        string raw = null;
+        if (reply["nameplate"] is JObject namePlate)
+        {
+            // Kept by hash in host\, like the pictures in shared\
+            string icon = null;
+            if ((string)reply["picture"] is { Length: > 0 } png)
+            {
+                var bytes = Convert.FromBase64String(png);
+                string hash;
+                using (var sha1 = SHA1.Create())
+                {
+                    hash = BitConverter.ToString(sha1.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant();
+                }
+
+                icon = HostFolder + "/" + hash + ".png";
+                var path = Path.Combine(Plugin.Folder, icon);
+                if (!File.Exists(path))
+                {
+                    Directory.CreateDirectory(Path.Combine(Plugin.Folder, HostFolder));
+                    File.WriteAllBytes(path, bytes);
+                }
+            }
+
+            entry = namePlate.ToObject<IconEntry>();
+            entry.Category = category.ToString(CultureInfo.InvariantCulture);
+            if (icon != null)
+            {
+                entry.Icon = icon;
+            }
+
+            raw = category + "|" + namePlate.ToString(Formatting.None) + "|" + icon;
+        }
+
+        IconTable.SetHostEntry(entry, raw);
+
+        var said = entry == null
+            ? $"{Tag}No Name Plate from the host for you: {(string)reply["why"]}"
+            : IconTable.DefinedHere((EMemberCategory)category)
+                ? $"{Tag}The host made a Name Plate for your icon {category}, but this PC's icons.json has its own for that icon, which wins"
+                : $"{Tag}Your Name Plate for icon {category} was made on the host: {Describe(entry, entry.Icon?.StartsWith(HostFolder + "/") == true)}";
+        if (said != _mineSaid)
+        {
+            _mineSaid = said;
+            Plugin.Log.LogInfo(said);
+        }
+    }
+
+    private static void CheckOwnIcon()
+    {
+        var profile = TarkovApplication.Exist(out var app) ? app.GetClientBackEndSession()?.Profile : null;
+        if (profile != null && IconTable.WarnIfUndefined(profile.Info.SelectedMemberCategory))
+        {
+            _iconCheckDue = false;
+        }
     }
 
     // ---------------------------------------------------------------- theirs
@@ -470,14 +574,15 @@ public static class SharedNamePlates
     /// <summary>
     /// Posts to a route; the reply (null on failure) is handled on the main thread. A reply without
     /// <paramref name="expect"/> isn't Name Plate's: a server without the routes answers some routes
-    /// with an error object, which mustn't pass for "shared".
+    /// with an error object, which mustn't pass for "shared". A route only newer servers have
+    /// passes <paramref name="optional"/>: missing, it doesn't turn sharing off.
     /// </summary>
-    private static void Post(string route, string json, string expect, Action<JObject> done)
+    private static void Post(string route, string json, string expect, Action<JObject> done, bool optional = false)
     {
         // Counted on the main thread, where everything else here lives
         void Fail(string why) => MainThread.Enqueue(() =>
         {
-            if (++_failures >= GiveUpAfter && !_off)
+            if (!optional && ++_failures >= GiveUpAfter && !_off)
             {
                 _off = true;
                 Plugin.Log.LogWarning($"{Tag}Turned off for this session: the server didn't answer {route} ({why}). "

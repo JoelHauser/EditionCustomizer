@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
@@ -36,12 +37,21 @@ public record SharedReply([property: JsonPropertyName("nameplates")] List<Shared
 
 public record PictureReply([property: JsonPropertyName("picture")] string? Picture);
 
+public record MineRequest : IRequestData;
+
+/// <summary>The Name Plate made on the host for the icon you show, or none (with why).</summary>
+public record MineReply(
+    [property: JsonPropertyName("category")] int Category,
+    [property: JsonPropertyName("nameplate")] JsonNode? NamePlate,
+    [property: JsonPropertyName("picture")] string? Picture,
+    [property: JsonPropertyName("why")] string Why);
+
 /// <summary>
-/// Name Plate sharing's three routes: share your own, get everyone's, and fetch a picture by its
-/// hash (pictures are sent once, then cached).
+/// Name Plate sharing's routes: share your own, get everyone's, fetch a picture by its hash
+/// (pictures are sent once, then cached), and get the Name Plate made on the host for you.
 /// </summary>
 [Injectable(TypePriority = OnLoadOrder.Routers)]
-public class ShareRouter(JsonUtil jsonUtil, SharedNamePlates shared, HttpResponseUtil httpResponseUtil)
+public class ShareRouter(JsonUtil jsonUtil, SharedNamePlates shared, HostNamePlates host, HttpResponseUtil httpResponseUtil)
     : StaticRouter(
         jsonUtil,
         [
@@ -60,6 +70,14 @@ public class ShareRouter(JsonUtil jsonUtil, SharedNamePlates shared, HttpRespons
                 "/nameplate/picture",
                 (url, info, sessionId, output, cancellationToken) =>
                     new ValueTask<string>(httpResponseUtil.NoBody(new PictureReply(shared.Picture(info.Hash))))),
+
+            new RouteAction<MineRequest>(
+                "/nameplate/mine",
+                (url, info, sessionId, output, cancellationToken) =>
+                {
+                    var answer = host.For(sessionId);
+                    return new ValueTask<string>(httpResponseUtil.NoBody(new MineReply(answer.Category, answer.NamePlate, answer.Picture, answer.Why)));
+                }),
         ])
 {
 }

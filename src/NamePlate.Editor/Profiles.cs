@@ -108,6 +108,35 @@ public class Profiles(string sptPath, string backupFolder)
         }
 
         Io.ReplaceText(profile.Path, output);
+        Assign(root["info"]?["id"]?.GetValue<string>() ?? System.IO.Path.GetFileNameWithoutExtension(profile.Path), selected);
         return backup;
+    }
+
+    /// <summary>
+    /// Notes in the server mod's assigned-nameplates.json that this character was given this icon
+    /// here, so the server hands this PC's Name Plate for it to the player's own game, wherever they
+    /// play from (a friend on a Fika host). New icons (2048+) go to whoever wears them anyway.
+    /// </summary>
+    private void Assign(string profileId, int selected)
+    {
+        var modFolder = System.IO.Path.Combine(sptPath, "SPT_Runtime", "user", "mods", "NamePlate");
+        if (!Directory.Exists(modFolder))
+        {
+            return;
+        }
+
+        var path = System.IO.Path.Combine(modFolder, "assigned-nameplates.json");
+        JsonObject assigned;
+        try
+        {
+            assigned = File.Exists(path) ? JsonNode.Parse(File.ReadAllText(path)) as JsonObject ?? [] : [];
+        }
+        catch (JsonException)
+        {
+            assigned = [];
+        }
+
+        assigned[profileId] = selected;
+        Io.ReplaceText(path, assigned.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
 }

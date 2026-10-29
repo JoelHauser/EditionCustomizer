@@ -71,7 +71,7 @@ page you choose how many bots get a Name Plate and what they can use, or turn bo
 
 ## Good to know
 
-- **Fika:** for Name Plate sharing, every player needs Name Plate, and the host's server needs its server part (it's in the same zip). Real players never get bot Name Plates. You can stop sharing yours on the editor's **Profile** page.
+- **Fika:** for Name Plate sharing, every player needs Name Plate, and the host's server needs its server part (it's in the same zip). A Name Plate made in the editor on the host (headless too) reaches its player's own PC. Real players never get bot Name Plates. You can stop sharing yours on the editor's **Profile** page.
 - Works with Bot Callsigns Reloaded, Realistic PMC Names and MoxoPixel's Menu Overhaul.
 - **Updating from Edition Customizer?** It's the same mod, renamed. Move your `icons.json` from
   `BepInEx/plugins/ChangeIcons` to `BepInEx/plugins/NamePlate`, then delete the old ChangeIcons folders and `ChangeIcons Editor.exe`.

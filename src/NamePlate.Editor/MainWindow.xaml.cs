@@ -256,7 +256,11 @@ public partial class MainWindow : Window
             MessageBox.Show(this,
                 $"This SPT folder is missing part of the mod:\n\n{string.Join("\n", missing)}\n\n"
                 + $"Unpack the whole Name Plate zip into {_sptPath} (it adds those files next to this editor), "
-                + "then restart the game. You can keep editing meanwhile; your changes are saved for when it's installed.",
+                + "then restart the game. You can keep editing meanwhile; your changes are saved for when it's installed."
+                + (missing.Count == 1 && missing[0].StartsWith("SPT_Runtime")
+                    ? "\n\nPlaying on a Fika host's server? Then the server mod belongs on the host, and this is fine. "
+                      + "A Name Plate made on the host reaches you; one you make here, for the same icon, wins."
+                    : ""),
                 Title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
@@ -1163,7 +1167,8 @@ public partial class MainWindow : Window
         ProfileList.SelectedItem = _profileItems.FirstOrDefault(p => p.Summary.Path == current) ?? _profileItems.FirstOrDefault(p => p.Summary.HasCharacter);
         if (_profileItems.Count == 0)
         {
-            ProfileNote.Text = $"No profiles in {_profiles.Folder}";
+            ProfileNote.Text = $"No profiles in {_profiles.Folder}. Playing on a Fika host? Your icon is chosen there (Name Plate.exe "
+                + "on the host, or the 'spt membercategory' chat command). A Name Plate made there reaches you; one made here wins.";
         }
     }
 
@@ -1258,7 +1263,8 @@ public partial class MainWindow : Window
             LoadProfiles();
             SetStatus("Saved to the character");
             ProfileNote.Text = $"Saved. Start the server, then the game. The old profile is backed up in {Path.GetDirectoryName(backup)}"
-                + (_dirty ? "\nYour icon changes aren't saved yet: press Save too." : "");
+                + (_dirty ? "\nYour icon changes aren't saved yet: press Save too." : "")
+                + "\nPlaying from another PC (Fika)? This Name Plate reaches them through the server, unless they made their own for this icon.";
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or InvalidOperationException or InvalidDataException or System.Text.Json.JsonException)
         {

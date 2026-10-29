@@ -114,6 +114,57 @@ public static class IconTable
 
     public static bool IsCustom(EMemberCategory category) => !Enum.IsDefined(typeof(EMemberCategory), category);
 
+    /// <summary>
+    /// The Name Plate made on the host for the icon you show (<see cref="SharedNamePlates"/>), or null.
+    /// Used only when this PC's icons.json doesn't define that icon.
+    /// </summary>
+    public static IconEntry HostEntry { get; private set; }
+
+    private static string _hostRaw;
+
+    /// <summary>Takes the host's Name Plate; true when that changed what's drawn (icons reloaded).</summary>
+    public static bool SetHostEntry(IconEntry entry, string raw)
+    {
+        if (raw == _hostRaw)
+        {
+            return false;
+        }
+
+        _hostRaw = raw;
+        HostEntry = entry;
+        Reload();
+        return true;
+    }
+
+    /// <summary>Whether this PC's own icons.json has an entry for that icon (the host's doesn't count).</summary>
+    public static bool DefinedHere(EMemberCategory category) => Entries.TryGetValue(category, out var entry) && entry != HostEntry;
+
+    /// <summary>
+    /// The profile wears a new icon (2048+) that neither this PC's icons.json nor the host defines,
+    /// so the game shows the default. False until icons.json has been applied (nothing to check
+    /// against yet).
+    /// </summary>
+    public static bool WarnIfUndefined(EMemberCategory selected)
+    {
+        if (Originals.Count == 0)
+        {
+            return false;
+        }
+
+        for (var bit = 0x800; bit > 0; bit <<= 1)
+        {
+            var flag = (EMemberCategory)bit;
+            if (((int)selected & bit) != 0 && IsCustom(flag) && !Customized.Contains(flag))
+            {
+                Plugin.Log.LogWarning($"Your profile wears icon {bit}, but neither this PC's icons.json nor the server has a Name Plate "
+                    + "for it, so the game shows its default. Make it in Name Plate.exe, on this PC or on the server's PC "
+                    + "(that one needs Name Plate {ModVersion.Value} or later on the server).");
+            }
+        }
+
+        return true;
+    }
+
     public static void Apply(ChatSpecialIconSettings settings)
     {
         if (settings == null || Originals.ContainsKey(settings))
@@ -178,9 +229,11 @@ public static class IconTable
             var priority = settings.Priority.ToList();
             var fallbackSprite = rows.FirstOrDefault(r => r.Category == EMemberCategory.Default)?.IconSprite;
 
-            foreach (var entry in Plugin.Settings.Icons)
+            // The host's Name Plate goes last, and only for an icon this PC's icons.json leaves alone
+            var host = HostEntry;
+            foreach (var entry in host == null ? Plugin.Settings.Icons : Plugin.Settings.Icons.Concat(new[] { host }))
             {
-                if (!TryParseCategory(entry.Category, out var category))
+                if (!TryParseCategory(entry.Category, out var category) || (entry == host && Customized.Contains(category)))
                 {
                     continue;
                 }
