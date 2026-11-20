@@ -18,6 +18,7 @@ public class Plugin : BaseUnityPlugin
     public static ManualLogSource Log;
     public static string Folder;
     public static IconConfig Settings;
+    public static BepInEx.Configuration.ConfigEntry<bool> DeveloperConsolePopup;
 
     private string _configPath;
     private FileSystemWatcher _watcher;
@@ -31,6 +32,8 @@ public class Plugin : BaseUnityPlugin
         Log = Logger;
         Folder = Path.GetDirectoryName(Info.Location);
         _configPath = Path.Combine(Folder, "icons.json");
+        DeveloperConsolePopup = Config.Bind("Developer icon", "Errors open the console", false,
+            "EFT pops the console open on every error for profiles with the Developer icon. Off keeps the icon without that.");
 
         Settings = LoadConfig() ?? new IconConfig();
         RealPlayers.Load(Folder);

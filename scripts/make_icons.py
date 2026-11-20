@@ -2652,6 +2652,370 @@ def castle():
     return img
 
 
+# ---------------------------------------------------------------- batch 7
+
+
+def thumbsup():
+    img, d = canvas()
+    # Fist with the thumb up
+    d.rounded_rectangle((70, 112, 210, 236), 26, fill=FULL)
+    d.rounded_rectangle((92, 20, 146, 140), 26, fill=FULL)
+    d.polygon([(92, 104), (146, 92), (176, 120), (92, 130)], fill=FULL)
+    for y in (140, 172, 204):
+        d.line((150, y, 210, y), fill=SHADE, width=10)
+    d.rounded_rectangle((24, 118, 62, 236), 10, fill=SHADE)
+    return img
+
+
+def fist():
+    img, d = canvas()
+    d.rounded_rectangle((40, 50, 216, 150), 30, fill=FULL)
+    for x in (84, 128, 172):
+        d.line((x, 56, x, 140), fill=SHADE, width=10)
+    d.rounded_rectangle((60, 130, 196, 240), 24, fill=FULL)
+    d.rounded_rectangle((36, 118, 150, 168), 24, fill=SHADE)
+    return img
+
+
+def mappin():
+    img, d = canvas()
+    d.ellipse((46, 10, 210, 174), fill=FULL)
+    d.polygon([(60, 128), (196, 128), (128, 250)], fill=FULL)
+    d.ellipse((92, 56, 164, 128), fill=0)
+    return img
+
+
+def paperclip():
+    img, d = canvas()
+    w = 20
+    d.rounded_rectangle((70, 16, 186, 240), 58, outline=FULL, width=w)
+    d.rectangle((70, 150, 112, 240), fill=0)
+    d.rounded_rectangle((100, 56, 156, 196), 28, outline=SHADE, width=w)
+    d.rectangle((100, 56, 128, 120), fill=0)
+    d.line((110, 150, 110, 196), fill=0, width=1)
+    return img.rotate(-30, resample=Image.BICUBIC)
+
+
+def bookmark():
+    img, d = canvas()
+    d.polygon([(56, 12), (200, 12), (200, 244), (128, 186), (56, 244)], fill=FULL)
+    d.polygon([(150, 12), (200, 12), (200, 244), (150, 204)], fill=SHADE)
+    d.polygon(poly_star(128, 92, 44, 18, 5), fill=DEEP)
+    return img
+
+
+def footprint(lit=None):
+    img, d = canvas()
+    for k, (cx, cy, flip) in enumerate(((84, 150, 1), (172, 96, -1))):
+        heel = sole = FULL if lit in (None, k) else DEEP
+        if lit is None:
+            heel = SHADE
+        d.ellipse((cx - 30, cy - 50, cx + 30, cy + 46), fill=sole)
+        d.ellipse((cx - 24, cy + 52, cx + 24, cy + 94), fill=heel)
+        for j, (dx, r) in enumerate(((-22, 12), (-4, 11), (14, 10), (28, 8))):
+            d.ellipse((cx + dx * flip - r, cy - 76 + j * 6 - r, cx + dx * flip + r, cy - 76 + j * 6 + r), fill=sole)
+    return img
+
+def acorn():
+    img, d = canvas()
+    d.ellipse((60, 92, 196, 246), fill=FULL)
+    d.chord((40, 50, 216, 160), 180, 360, fill=SHADE)
+    d.rectangle((40, 104, 216, 128), fill=SHADE)
+    for x in range(56, 216, 26):
+        d.line((x, 66, x - 14, 126), fill=DEEP, width=5)
+    d.line((128, 54, 140, 12), fill=DEEP, width=14)
+    return img
+
+
+def seashell():
+    img, d = canvas()
+    # Scallop: a fan with a bumpy rim and ribs, a small hinge underneath
+    d.pieslice((10, 22, 246, 258), 198, 342, fill=FULL)
+    for a in range(200, 345, 18):
+        r = math.radians(a)
+        x, y = 128 + 112 * math.cos(r), 140 + 112 * math.sin(r)
+        d.ellipse((x - 20, y - 20, x + 20, y + 20), fill=FULL)
+    d.polygon([(22, 112), (234, 112), (128, 214)], fill=FULL)
+    for a in range(209, 340, 18):
+        r = math.radians(a)
+        d.line((128, 208, 128 + 116 * math.cos(r), 140 + 116 * math.sin(r)), fill=SHADE, width=8)
+    d.polygon([(92, 200), (164, 200), (176, 240), (80, 240)], fill=SHADE)
+    return img
+
+def lantern():
+    img, d = canvas()
+    d.arc((92, 4, 164, 64), 180, 360, fill=FULL, width=12)
+    d.rounded_rectangle((76, 36, 180, 64), 8, fill=SHADE)
+    d.rounded_rectangle((64, 64, 192, 212), 22, fill=FULL)
+    d.rounded_rectangle((90, 86, 166, 190), 16, fill=SHADE)
+    d.ellipse((108, 112, 148, 176), fill=FULL)
+    d.rounded_rectangle((76, 212, 180, 244), 8, fill=SHADE)
+    return img
+
+
+def scroll():
+    img, d = canvas()
+    d.rectangle((50, 46, 206, 210), fill=FULL)
+    for y in (88, 118, 148, 178):
+        d.line((76, y, 180 if y < 178 else 140, y), fill=SHADE, width=10)
+    for y in (46, 210):
+        d.rounded_rectangle((24, y - 22, 232, y + 22), 22, fill=SHADE)
+        d.ellipse((14, y - 22, 58, y + 22), fill=DEEP)
+        d.ellipse((198, y - 22, 242, y + 22), fill=DEEP)
+    return img
+
+
+def bow():
+    img, d = canvas()
+    d.arc((-40, 18, 150, 238), -78, 78, fill=FULL, width=22)
+    d.line((88, 26, 88, 230), fill=SHADE, width=6)
+    d.line((60, 128, 238, 128), fill=FULL, width=12)
+    d.polygon([(216, 104), (252, 128), (216, 152)], fill=FULL)
+    d.polygon([(48, 108), (82, 128), (48, 148), (62, 128)], fill=SHADE)
+    return img
+
+
+def vikinghelmet():
+    img, d = canvas()
+    # Horns either side
+    d.polygon([(52, 136), (14, 100), (10, 30), (40, 84), (80, 112)], fill=SHADE)
+    d.polygon([(204, 136), (242, 100), (246, 30), (216, 84), (176, 112)], fill=SHADE)
+    d.chord((44, 60, 212, 228), 180, 360, fill=FULL)
+    d.rectangle((44, 144, 212, 186), fill=FULL)
+    d.rectangle((44, 144, 212, 166), fill=DEEP)
+    d.rectangle((116, 64, 140, 220), fill=SHADE)
+    return img
+
+
+def tooth():
+    img, d = canvas()
+    d.ellipse((32, 26, 136, 120), fill=FULL)
+    d.ellipse((120, 26, 224, 120), fill=FULL)
+    d.rectangle((40, 70, 216, 140), fill=FULL)
+    d.polygon([(40, 120), (128, 140), (96, 236), (70, 236)], fill=FULL)
+    d.polygon([(216, 120), (128, 140), (160, 236), (186, 236)], fill=FULL)
+    d.ellipse((60, 46, 92, 82), fill=255)
+    d.polygon([(128, 140), (150, 120), (186, 236), (160, 236)], fill=SHADE)
+    return img
+
+
+def boomerang():
+    img, d = canvas()
+    # A wide, bent ^ with rounded tips: wider than the check mark, and points up
+    pts = [(26, 186), (70, 112), (128, 74), (186, 112), (230, 186)]
+    d.line(pts, fill=FULL, width=56, joint="curve")
+    for x, y in (pts[0], pts[-1]):
+        d.ellipse((x - 28, y - 28, x + 28, y + 28), fill=FULL)
+    d.line(pts[2:], fill=SHADE, width=22, joint="curve")
+    return img.rotate(-12, resample=Image.BICUBIC)
+
+def pickaxe():
+    img, d = canvas()
+    d.line((60, 228, 180, 72), fill=SHADE, width=22)
+    d.polygon([(30, 70), (90, 22), (160, 26), (230, 74), (250, 130), (196, 82), (128, 64), (64, 74)], fill=FULL)
+    d.rounded_rectangle((148, 40, 198, 96), 8, fill=DEEP)
+    return img
+
+
+def dna_tones(phase=0.0):
+    img, d = canvas()
+    n = 9
+    for i in range(n):
+        y = 18 + i * 220 / (n - 1)
+        a = phase + i * math.pi / 4
+        x1, x2 = 128 + 78 * math.sin(a), 128 - 78 * math.sin(a)
+        front = math.cos(a) >= 0
+        d.line((x1, y, x2, y), fill=DEEP, width=10)
+        for x, near in ((x1, front), (x2, not front)):
+            r = 20 if near else 15
+            d.ellipse((x - r, y - r, x + r, y + r), fill=FULL if near else SHADE)
+    return img
+
+
+def dna():
+    return dna_tones()
+
+
+# Multi-color
+
+
+def hotdog():
+    bun, d = canvas()
+    d.rounded_rectangle((14, 112, 242, 214), 50, fill=FULL)
+    d.rounded_rectangle((14, 162, 242, 214), 26, fill=SHADE)
+    sausage, d = canvas()
+    d.rounded_rectangle((4, 92, 252, 150), 29, fill=FULL)
+    mustard, d = canvas()
+    d.line([(36 + i * 24, 120 + (12 if i % 2 else -10)) for i in range(9)], fill=FULL, width=10, joint="curve")
+    return [(bun, "#E8A04B"), (sausage, "#C4513A"), (mustard, "#FFD43B")]
+
+
+def avocado():
+    skin, d = canvas()
+    d.ellipse((50, 14, 206, 150), fill=FULL)
+    d.ellipse((24, 84, 232, 248), fill=FULL)
+    flesh, d = canvas()
+    d.ellipse((70, 34, 186, 140), fill=FULL)
+    d.ellipse((46, 102, 210, 230), fill=FULL)
+    pit, d = canvas()
+    d.ellipse((88, 116, 168, 196), fill=FULL)
+    d.ellipse((104, 128, 128, 152), fill=SHADE)
+    return [(skin, "#3E7A34"), (flesh, "#C9E58A"), (pit, "#8C5A3C")]
+
+
+def chili():
+    pepper, d = canvas()
+    d.line([(70, 60), (130, 70), (178, 104), (204, 156), (206, 210), (190, 244)], fill=FULL, width=58, joint="curve")
+    d.ellipse((40, 30, 112, 100), fill=FULL)
+    d.line([(96, 76), (150, 92), (180, 130)], fill=255, width=10)
+    stem, d = canvas()
+    d.polygon([(26, 50), (80, 22), (94, 52), (50, 92)], fill=FULL)
+    d.line((52, 40, 24, 8), fill=FULL, width=14)
+    return [(pepper, "#E5373E"), (stem, "#5BAE4A")]
+
+
+def flamingo():
+    body, d = canvas()
+    d.ellipse((70, 90, 210, 170), fill=FULL)
+    d.polygon([(190, 106), (244, 92), (214, 150)], fill=SHADE)
+    d.line([(96, 108), (70, 70), (70, 34), (96, 20), (120, 34)], fill=FULL, width=22, joint="curve")
+    d.ellipse((96, 16, 134, 50), fill=FULL)
+    legs, d = canvas()
+    d.line((136, 164, 136, 250), fill=FULL, width=8)
+    d.line((150, 164, 162, 206, 132, 214), fill=FULL, width=8)
+    beak, d = canvas()
+    d.polygon([(130, 26), (158, 40), (146, 70), (136, 46)], fill=FULL)
+    return [(body, "#FF7BAC"), (legs, "#E0577F"), (beak, "#2B2F36")]
+
+
+def hotairballoon_layers(sway=0.0):
+    env = []
+    stripes = ["#E5373E", "#FFD43B", "#3DB9FF", "#FFD43B", "#E5373E"]
+    for k, color in enumerate(stripes):
+        layer, d = canvas()
+        d.ellipse((30, 6, 226, 196), fill=FULL)
+        d.polygon([(48, 140), (208, 140), (156, 196), (100, 196)], fill=FULL)
+        mask = Image.new("L", (S, S), 0)
+        ImageDraw.Draw(mask).rectangle((30 + k * 39.2, 0, 30 + (k + 1) * 39.2, 200), fill=255)
+        layer = ImageChops.multiply(layer, mask)
+        env.append((layer, color))
+    ropes, d = canvas()
+    d.line((102, 194, 110, 214), fill=FULL, width=6)
+    d.line((154, 194, 146, 214), fill=FULL, width=6)
+    basket, d = canvas()
+    d.rounded_rectangle((100, 212, 156, 248), 6, fill=FULL)
+    d.line((100, 224, 156, 224), fill=SHADE, width=5)
+    layers = env + [(ropes, "#3B4250"), (basket, "#B07A4F")]
+    return [(t.transform(t.size, Image.AFFINE, (1, 0, 0, 0, 1, sway), resample=Image.BICUBIC), c) for t, c in layers]
+
+
+def hotairballoon():
+    return hotairballoon_layers()
+
+
+def beachball_layers(angle=0.0):
+    colors = ["#E5373E", "#F2F4F7", "#3DB9FF", "#F2F4F7", "#FFD43B", "#F2F4F7"]
+    layers = []
+    for k, color in enumerate(colors):
+        layer, d = canvas()
+        d.pieslice((14, 14, 242, 242), angle + k * 60, angle + (k + 1) * 60, fill=FULL)
+        layers.append((layer, color))
+    hub, d = canvas()
+    d.ellipse((108, 108, 148, 148), fill=FULL)
+    shine, d = canvas()
+    d.ellipse((58, 44, 96, 78), fill=FULL)
+    return layers + [(hub, "#F2F4F7"), (shine, "#FFFFFF")]
+
+
+def beachball():
+    return beachball_layers(-90)
+
+
+def sakura():
+    petals, d = canvas()
+    for k in range(5):
+        a = math.radians(-90 + k * 72)
+        cx, cy = 128 + 66 * math.cos(a), 128 + 66 * math.sin(a)
+        d.ellipse((cx - 56, cy - 56, cx + 56, cy + 56), fill=FULL)
+        tx, ty = 128 + 126 * math.cos(a), 128 + 126 * math.sin(a)
+        d.polygon([(tx, ty), (cx + 30 * math.cos(a + 1.2), cy + 30 * math.sin(a + 1.2)),
+                   (cx + 30 * math.cos(a - 1.2), cy + 30 * math.sin(a - 1.2))], fill=0)
+    centre, d = canvas()
+    d.ellipse((98, 98, 158, 158), fill=FULL)
+    for k in range(5):
+        a = math.radians(-54 + k * 72)
+        x, y = 128 + 50 * math.cos(a), 128 + 50 * math.sin(a)
+        d.line((128, 128, x, y), fill=FULL, width=6)
+        d.ellipse((x - 9, y - 9, x + 9, y + 9), fill=FULL)
+    return [(petals, "#FFB3CF"), (centre, "#E0577F")]
+
+
+def sushi():
+    rice, d = canvas()
+    d.rounded_rectangle((26, 120, 230, 214), 40, fill=FULL)
+    d.rounded_rectangle((26, 170, 230, 214), 22, fill=SHADE)
+    fish, d = canvas()
+    d.rounded_rectangle((14, 70, 242, 148), 36, fill=FULL)
+    for x in (70, 120, 170, 214):
+        d.line((x, 76, x - 26, 142), fill=255, width=9)
+    nori, d = canvas()
+    d.rectangle((104, 66, 152, 214), fill=FULL)
+    return [(rice, "#F4F1EA"), (fish, "#FF8A5C"), (nori, "#24372C")]
+
+
+# Animated
+
+
+def dna_frames(n):
+    # The helix turns: half a turn per loop looks the same (strands swap), so it joins
+    return [scaled(dna_tones(math.pi * i / n), 0.9, 0.9) for i in range(n)]
+
+
+def mappin_frames(n):
+    # Drops in and bounces, then rests
+    frames = []
+    for i in range(n):
+        t = i / n
+        h = 26 * abs(math.sin(2 * math.pi * t)) * (1 - t)
+        squash = 1 - 0.1 * max(0.0, math.cos(4 * math.pi * t)) * (1 - t) if h < 4 else 1
+        m = scaled(mappin(), 0.86 / squash, 0.86 * squash, anchor_bottom=True)
+        frames.append(m.transform(m.size, Image.AFFINE, (1, 0, 0, 0, 1, h + 10), resample=Image.BICUBIC))
+    return frames
+
+
+def lantern_frames(n):
+    # The light inside flickers, the lantern swings a little from its handle
+    frames = []
+    for i in range(n):
+        a = 2 * math.pi * i / n
+        img = lantern()
+        d = ImageDraw.Draw(img)
+        k = 0.7 + 0.3 * abs(math.sin(a * 1.5 + 0.4))
+        d.ellipse((128 - 22 * k, 144 - 34 * k, 128 + 22 * k, 144 + 32 * k), fill=FULL)
+        frames.append(scaled(img, 0.88, 0.88).rotate(7 * math.sin(a), resample=Image.BICUBIC, center=(128, 20)))
+    return frames
+
+
+def thumbsup_frames(n):
+    # Pops up big, settles, rests
+    pop = [0.8, 0.95, 1.0, 0.93, 0.88, 0.88, 0.88, 0.88, 0.88, 0.88]
+    return [scaled(thumbsup(), k, k).rotate(-10 * (k - 0.88) / 0.12, resample=Image.BICUBIC) for k in pop[:n]]
+
+
+def footprint_frames(n):
+    # Left, right, left...: the foot just put down is bright and sinks in a little
+    frames = []
+    for i in range(n):
+        k = 0 if i < n // 2 else 1
+        press = 1 - 0.04 * math.sin(math.pi * (i % (n // 2)) / (n // 2))
+        frames.append(scaled(footprint(k), 0.94 * press, 0.94 * press))
+    return frames
+
+def boomerang_frames(n):
+    # One full turn per loop
+    return [scaled(boomerang(), 0.82, 0.82).rotate(-360 * i / n, resample=Image.BICUBIC) for i in range(n)]
+
+
 ICONS = [
     ("skull", skull, "#E8E4D8"),
     ("crosshair", crosshair, "#FF4A3D"),
@@ -2819,6 +3183,23 @@ ICONS = [
     ("wave", wave, "#3FA9F5"),
     ("tornado", tornado, "#A9B4BF"),
     ("castle", castle, "#B9A88A"),
+    # batch 7
+    ("thumbsup", thumbsup, "#FFC93C"),
+    ("fist", fist, "#E0A878"),
+    ("mappin", mappin, "#E5373E"),
+    ("paperclip", paperclip, "#B9C0C6"),
+    ("bookmark", bookmark, "#4D9BFF"),
+    ("footprint", footprint, "#C9B79C"),
+    ("acorn", acorn, "#C08050"),
+    ("seashell", seashell, "#FFB38A"),
+    ("lantern", lantern, "#F5C542"),
+    ("scroll", scroll, "#E8D5A8"),
+    ("bow", bow, "#B58B5A"),
+    ("vikinghelmet", vikinghelmet, "#A9B4BF"),
+    ("tooth", tooth, "#F2F2F2"),
+    ("boomerang", boomerang, "#E0A060"),
+    ("pickaxe", pickaxe, "#8A94A6"),
+    ("dna", dna, "#5BE3C4"),
 ]
 
 
@@ -3196,6 +3577,13 @@ ANIMATED = [
     ("animated-butterfly", butterfly_frames, 12, "#59B8FF"),
     ("animated-music", music_frames, 10, "#B98CFF"),
     ("animated-signal", signal_frames, 10, "#5BE36B"),
+    # batch 7
+    ("animated-dna", dna_frames, 12, "#5BE3C4"),
+    ("animated-mappin", mappin_frames, 12, "#E5373E"),
+    ("animated-lantern", lantern_frames, 12, "#F5C542"),
+    ("animated-thumbsup", thumbsup_frames, 10, "#FFC93C"),
+    ("animated-footprints", footprint_frames, 8, "#C9B79C"),
+    ("animated-boomerang", boomerang_frames, 12, "#E0A060"),
 ]
 
 # Animated icons in several colors: (name, frames -> list of layer lists, count)
@@ -3204,6 +3592,8 @@ ANIMATED_MULTI = [
     ("animated-wand", lambda n: [wand_layers(i / n) for i in range(n)], 12),
     ("animated-kite", lambda n: [kite_layers(7 * math.sin(2 * math.pi * i / n), 2 * math.pi * i / n) for i in range(n)], 12),
     ("animated-vinyl", lambda n: [vinyl_layers(-360 * i / n) for i in range(n)], 12),
+    ("animated-hotairballoon", lambda n: [hotairballoon_layers(10 * math.sin(2 * math.pi * i / n)) for i in range(n)], 12),
+    ("animated-beachball", lambda n: [beachball_layers(-90 - 360 * i / n) for i in range(n)], 16),
 ]
 
 
@@ -3335,6 +3725,15 @@ MULTI = [
     ("rose", rose),
     ("wizard-hat", wizardhat),
     ("wand", wand),
+    # batch 7
+    ("hotdog", hotdog),
+    ("avocado", avocado),
+    ("chili", chili),
+    ("flamingo", flamingo),
+    ("hotairballoon", hotairballoon),
+    ("beachball", beachball),
+    ("sakura", sakura),
+    ("sushi", sushi),
 ]
 
 

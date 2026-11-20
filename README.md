@@ -1,7 +1,7 @@
 # Name Plate
 
 Make your name stand out in Escape from Tarkov (SPT 4.1). Give your nickname colors, gradients,
-animations, a glow and a clan tag. Pick any icon from the game, from a library of 244 extra icons
+animations, a glow and a clan tag. Pick any icon from the game, from a library of 276 extra icons
 (32 of them animated) or from a picture of your own. PMC bots get Name Plates of their own too, so
 the names on the death screen, the flea market and the dogtags you take aren't all plain gray. With
 Fika, Name Plate sharing lets friends who run the mod see your Name Plate, and you see theirs.
@@ -25,7 +25,7 @@ Everything is set up in **Name Plate.exe**, an editor with a live preview:
 - Optionally, your scav's name gets your Name Plate too.
 
 **Your icon**
-- Any of the game's own icons (about 1,100 are read straight out of the game files), the 244 library icons, or your own PNGs.
+- Any of the game's own icons (about 1,100 are read straight out of the game files), the 276 library icons, or your own PNGs.
 - Recolor the game's member icons, or add brand-new ones next to Standard, Edge of Darkness, Unheard and the rest.
 - Animated icons, plus icon effects: pulse, glow, flip and float.
 - Hide the prestige badge or swap it for a picture of your own.
@@ -103,7 +103,7 @@ Unpack `NamePlate-<version>.zip` into your SPT folder (the one with `EscapeFromT
 Name Plate.exe                                   the editor
 SPT_Runtime/user/mods/NamePlate/NamePlate.dll    server mod (the chat command, Name Plate sharing)
 BepInEx/plugins/NamePlate/NamePlate.Client.dll   client plugin (icons, colors, bots)
-BepInEx/plugins/NamePlate/icons/library/*.png    244 extra icons
+BepInEx/plugins/NamePlate/icons/library/*.png    276 extra icons
 ```
 
 The zip has no `icons.json`, so updating never overwrites your Name Plates.

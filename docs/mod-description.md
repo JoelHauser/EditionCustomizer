@@ -16,7 +16,7 @@ their own too, so the names you run into aren't all plain gray.
 - **Surprise me**: a random Name Plate in one click
 
 **Your icon**
-- Any of the game's ~1,100 icons, 244 extra icons (32 animated), or your own PNG
+- Any of the game's ~1,100 icons, 276 extra icons (40 animated), or your own PNG
 - Make brand-new icons, or recolor the existing ones (Standard, Edge of Darkness, Unheard…)
 - Icon effects: pulse, glow, flip and float
 - Hide the prestige badge, or swap it for your own picture
